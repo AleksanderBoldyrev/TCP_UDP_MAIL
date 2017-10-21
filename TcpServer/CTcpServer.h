@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "stdinc.h"
 #include <iostream>
 #include <fstream>
@@ -16,6 +15,14 @@
 #define MES_DATE_TIME   "<date/time>"
 #define MES_LEN         "<len>"
 #define MES_STATE       "<state>"             // message read/unread/deleted
+
+const int a[] = {1, 2, 3};
+
+const int MESSAGE_STATES[] = {0, 1, 2 };
+
+#define MSTATE_NORMAL 0 // position of normal value
+#define MSTATE_DELETED 1 // position of deleted value
+#define MSTATE_UNREAD 2 // position of unread value
 
 typedef unsigned short  USHORT;
 typedef int             SOCKET;
@@ -121,12 +128,12 @@ public:
 
     void OnMessage(ClientID From, std::string MsgStr, int State, int CurQst, int result);
     char* removeLastSymbol(char* str);
-    string RegisterNewUser(const string &data, bool &res);
+    /*string RegisterNewUser(const string &data, bool &res);
     string LoginNewUser(const string &data, bool &res, string& username);
     string DeleteUser(const string& username);
     string GetPasswFilePth(const string& username);
     string GetMessageFilePth(const string& username);
-    unsigned long AddMessage(const string& message, const string& username);
+    unsigned long AddMessage(const string& message, const string& username);*/
     
     void SendTo(const char* MsgStr, const ClientID CliID);
     std::vector<char*> users;

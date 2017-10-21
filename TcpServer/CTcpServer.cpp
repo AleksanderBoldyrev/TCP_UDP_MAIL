@@ -1,6 +1,8 @@
 #include "stdinc.h"
 #include "CTcpServer.h"
 
+
+
 CTcpServer::CTcpServer() {
     AcceptSock = 0;
     LastClientID = 0;
@@ -360,7 +362,8 @@ string LoginNewUser(const string &data, bool &res, string& username) {
                 else uname.push_back(data[i]);
             }
         }
-        ifstream fin(GetPasswFilePth(uname).c_str());
+        string pth = GetPasswFilePth(uname);
+        ifstream fin(pth.c_str());
         if (fin.good()) {
             fin >> pass2;
             fin.close();
@@ -424,7 +427,7 @@ unsigned long AddMessage(const string& message, const string& username)
                 if (lastpos!=string::npos)
                 {
                     string numStr = buf.substr(position, lastpos - position);
-                    lastId = strtoul(numStr.c_str(), NULL, 10);
+                    lastId = strtoul(numStr.c_str(), NULL, 10)+1;
                     cout << "Converted number: " << lastId;
                 }
                 else
@@ -439,7 +442,15 @@ unsigned long AddMessage(const string& message, const string& username)
         ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
         if (out.good())
         {
-            out << 
+            time_t seconds = time(NULL);
+            tm* timeinfo = localtime(&seconds);
+
+            out << MES_ID << lastId << endl;
+            out << MES_ADDR << username << endl;
+            out << MES_DATE_TIME << asctime(timeinfo);// << endl;
+            out << MES_LEN << message.size() << endl;
+            out << MES_STATE << MESSAGE_STATES[MSTATE_NORMAL] << endl;
+            out << message << endl;
         }
         out.close();       
     }
