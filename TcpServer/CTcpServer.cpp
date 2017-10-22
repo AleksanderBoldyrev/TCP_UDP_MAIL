@@ -150,7 +150,7 @@ void CTcpServer::DisconnectAll() {
 
     ClientsMapArrayIt it = ClientsMap.begin();
 
-    while (it != ClientsMap.end()) {
+    while (it != ClientsMap.end()) {                                                    //TODO
         ClientInfo Info = (*it).second;
         if (shutdown(Info.ClientSocket, SHUT_RDWR) == -1)
             printf("Socket shutdown failed\r\n");
@@ -227,7 +227,7 @@ void* ListenThread(void* pParam) {
     ListenThInput pData = (*pOldData);
     delete pOldData;
 
-    char recvbuf[1024];
+    /*char recvbuf[1024];
     std::string MessageBuf;
 
     int State = pData.State;
@@ -239,7 +239,16 @@ void* ListenThread(void* pParam) {
 
     ListenProc(pData, State, CurQst, result);
 
-    pData.pParent->StopListenTh(pData.CliID, false);
+    pData.pParent->StopListenTh(pData.CliID, false);*/
+    ServerWorker w;
+    w.init(pData.ClientSocket);
+    bool res = w.mainLoop();
+    if (res)
+        printf("Client #%d terminated successfully!\n", pData.CliID);
+    else
+        printf("Client #%d terminated abnormally!\n", pData.CliID);
+    pthread_exit(0);
+    
 };
 
 void CloseThread(pthread_t ThH, bool bTerminate) {
@@ -283,7 +292,7 @@ void CTcpServer::SendTo(const char* MsgStr, ClientID CliID) {
     UnlockMutex(&Mut);
 };
 
-string GetPasswFilePth(const string& username)
+/*string GetPasswFilePth(const string& username)
 {
     string pth = USERS_FOLDER;
     pth += username;
@@ -456,328 +465,4 @@ unsigned long AddMessage(const string& message, const string& username)
     }
     
     return lastId;
-}
-
-// Функция вывода меню сервера
-
-bool ListenProc(ListenThInput& pData, int& State, int& CurQst, int& result) {
-    bool bQuit = false;
-    ClientID From;
-    string MsgStr;
-    string MessageBuf;
-    string currentUserName;
-    string errMessage;
-    int mesId;
-    
-    string buf;
-    bool RegisterState, LoginState;
-    char* reg_name = (char*) calloc(50, sizeof (char));
-    while (!bQuit) {
-        switch (State) {
-                // Main menu
-            case 1: pData.pParent->SendTo("* MAIL *\n", pData.CliID);
-                    pData.pParent->SendTo("Select the following items:\n", pData.CliID);
-                    if (currentUserName.size() > 0) pData.pParent->SendTo("1 - Add message\n", pData.CliID);
-                    pData.pParent->SendTo("2 - Exit\n", pData.CliID);
-                    if (currentUserName.size() == 0) pData.pParent->SendTo("3 - Register\n", pData.CliID);
-                    if (currentUserName.size() > 0) pData.pParent->SendTo("4 - Logout\n", pData.CliID);
-                    else pData.pParent->SendTo("4 - Login\n", pData.CliID);
-                    if (currentUserName.size() > 0) pData.pParent->SendTo("5 - Delete user\n", pData.CliID);
-                break;
-
-            case 2: pData.pParent->SendTo("Enter your message: ", pData.CliID);
-                break;
-
-            case 3: printf("Client with ID: %d is disconnect!\r\n", pData.CliID);
-                //pData.pParent->DisconnectClient(pData.CliID);
-            pData.pParent->StopListenTh(pData.CliID, true);
-                break;
-
-            case 4:
-                buf = "Your message is: ";
-                buf += MessageBuf;
-                pData.pParent->SendTo(buf.c_str(), pData.CliID);
-                break;
-
-            case 5: //pData.pParent->SendTo("Wrong input. Press any key.", pData.CliID);
-                State = 4;
-                break;
-            case 6: pData.pParent->SendTo("You are about to sign up. Enter the username consisting of <username>@<password>\n", pData.CliID);
-                State = 5;
-                break;
-            case 7:
-                if (RegisterState == true) pData.pParent->SendTo("Registered successfully. Press any key.", pData.CliID);
-                else 
-                {
-                    string buf = "Register failed. ERROR -> ";
-                    buf.append(errMessage.c_str());
-                    buf.append("Press any key.");
-                    pData.pParent->SendTo(buf.c_str(), pData.CliID);
-                }
-                State = 4;
-                break;
-            case 8:
-                if (currentUserName.size() == 0) 
-                {
-                    pData.pParent->SendTo("You are about to log in. Enter the username consisting of <username>@<password>\n", pData.CliID);
-                    State = 6;
-                }
-                else
-                {
-                    pData.pParent->SendTo("Log out successfully.\n", pData.CliID);
-                    currentUserName = "";
-                    State = 4;
-                }
-                break;
-            case 9:
-                if (LoginState == true) 
-                {
-                    string buf = "Login successfully. User -> ";
-                    buf.append(currentUserName);
-                    buf.append("Press any key.");
-                    pData.pParent->SendTo(buf.c_str(), pData.CliID);                     
-                }
-                else 
-                {
-                    string buf = "Login failed. ERROR -> ";
-                    buf.append(errMessage);
-                    buf.append("Press any key.");
-                    pData.pParent->SendTo(buf.c_str(), pData.CliID);
-                }
-                State = 4;
-                break;
-            case 10:
-                if (currentUserName.size() > 0) 
-                {
-                    pData.pParent->SendTo("Really delete user? ('Y' - yes, <all other> - no): ", pData.CliID);
-                    //pData.pParent->SendTo("Deleting your account.\n", pData.CliID);
-                    State = 7;
-                }
-                else pData.pParent->SendTo("You should be logged in to delete user.\n", pData.CliID);
-                break;
-            case 11:
-                if (errMessage.size() ==0) 
-                {
-                    pData.pParent->SendTo("Account deleted successfully. Press any key.\n", pData.CliID);
-                    State = 4;
-                }
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    pData.pParent->SendTo(buf.c_str(), pData.CliID);
-                    State = 4;
-                }
-                break;    
-                /*case 4: pData.pParent->SendTo("*** Testing ***\n\nSelect a test:\n\n1 - <First class>\n2 - <Informatika>\n0 - In main menu\n\0", pData.CliID);
-                    break;
-                // Тест First Class                    
-                case 5: pData.pParent->SendTo("\n*** TEST <First class> ***\n\n\0", pData.CliID);
-                        if(CurQst==1){
-                            pData.pParent->SendTo("Question #1. What is 2x2 ?\n1)3\n2)4\n3)6\n\0", pData.CliID);    
-                        }
-                        else if(CurQst==2){
-                            pData.pParent->SendTo("Question #2. What color is a banana?\n1)Red\n2)Green\n3)Yellow\n\0", pData.CliID);
-                        }
-                    break;
-                // Тест Informatika
-                case 6:  pData.pParent->SendTo("\n*** TEST: <Informatika> ***\n\n\0", pData.CliID);
-                         if(CurQst==1){
-                            pData.pParent->SendTo("Question #1. How many bytes in kilobyte?\n1)1024 byte\n2)8 byte\n3)512 byte\n\0", pData.CliID);    
-                         }
-                         else if(CurQst==2){
-                            pData.pParent->SendTo("Question #2. Turn  4 in the binary system\n1)101\n2)100\n3)1000\n\0", pData.CliID);
-                         }
-                    break;*/
-        }
-
-        if (!ListenRecv(From, MsgStr, pData)) return false;
-
-        switch (State) {
-            case 1: if (strcmp((char*) MsgStr.c_str(), "1") == 0)
-                    {
-                        if (currentUserName.size() > 0) State = 2;
-                        else State = 5;
-                    }
-                else if (strcmp((char*) MsgStr.c_str(), "2") == 0) State = 3;
-                else if (strcmp((char*) MsgStr.c_str(), "3") == 0) 
-                    {
-                        if (currentUserName.size() == 0) State = 6;
-                        else State = 5;
-                    }
-                else if (strcmp((char*) MsgStr.c_str(), "4") == 0) State = 8;
-                else if (strcmp((char*) MsgStr.c_str(), "5") == 0) 
-                    {
-                        if (currentUserName.size() > 0) State = 10;
-                        else State = 5;
-                    }
-                else State = 5;
-                break;
-
-            case 2:
-                /*if(register_user((char*)MsgStr.c_str(),pData.pParent,pData.CliID))
-                        pData.pParent->SendTo("Registration finished!\0", pData.CliID);
-                memmove(reg_name, (char*)MsgStr.c_str(), strlen((char*)MsgStr.c_str())); */
-                MessageBuf = MsgStr;
-                mesId = AddMessage(MsgStr, currentUserName);
-                State = 4;
-                break;
-
-            case 3:
-                break;
-
-            case 4:
-                State = 1;
-                break;
-            case 5:
-                errMessage = RegisterNewUser(MsgStr, RegisterState);
-                State = 7;
-                break;
-            case 6:
-                errMessage = LoginNewUser(MsgStr, LoginState, currentUserName);
-                State = 9;
-                break;
-            case 7:
-                if (strcmp((char*) MsgStr.c_str(), "Y") == 0) 
-                {
-                    errMessage = DeleteUser(currentUserName);
-                    currentUserName = "";
-                    State = 11;
-                }
-                else
-                    State = 1;
-                break; 
-
-                /*case 4: if(strcmp((char*)MsgStr.c_str(),"2\0")==0) State=6;
-                        else if(strcmp((char*)MsgStr.c_str(),"1\0")==0) State=5;
-                        else if(strcmp((char*)MsgStr.c_str(),"0\0")==0) State=1;
-                    break;
-                        
-                case 5: if(CurQst==1){
-                            if(strcmp((char*)MsgStr.c_str(),"2\0")==0){ 
-                                result++;
-                                CurQst=2;
-                            }
-                            else if(strcmp((char*)MsgStr.c_str(),"1\0")==0 | strcmp((char*)MsgStr.c_str(),"3\0")==0)CurQst=2;      
-                         }
-                         else if(CurQst==2){
-                            if(strcmp((char*)MsgStr.c_str(),"3\0")==0){ 
-                                result++;
-                                printf("Client with ID:%d result are %d of 2\r\n", pData.CliID,result);
-                                    
-                            } 
-                            else if(strcmp((char*)MsgStr.c_str(),"1\0")==0 | strcmp((char*)MsgStr.c_str(),"2\0")==0){
-                                printf("Client with ID:%d result are %d of 2\r\n", pData.CliID,result);
-                           }
-                                CurQst=1;
-                                State=4;
-                                char* tmp_path = (char*)calloc(50, sizeof(char));
-                                memmove(tmp_path, "./reg/", strlen("./reg/"));
-                                strcat(tmp_path,reg_name);
-                                FILE* file_user = fopen(tmp_path,"w"); // открытие файла клиента
-                                char* tmp_res = (char*)calloc(50, sizeof(char));
-                                sprintf(tmp_res,"%d",result);
-                                fputs(tmp_res,file_user);
-                                fclose(file_user);
-                                    
-                                result=0;
-                         }
-                    break;
-                        
-                case 6: if(CurQst==1){
-                            if(strcmp((char*)MsgStr.c_str(),"1\0")>0){ 
-                                result++;
-                                CurQst=2;
-                            }
-                            else if(strcmp((char*)MsgStr.c_str(),"2\0")==0 | strcmp((char*)MsgStr.c_str(),"3\0")==0)CurQst=2;      
-                         }
-                         else if(CurQst==2){
-                            if(strcmp((char*)MsgStr.c_str(),"2\0")==0){ 
-                                result++;
-                                printf("Client with ID:%d result are %d of 2\r\n", pData.CliID,result);
-                                    
-                            } 
-                            else if(strcmp((char*)MsgStr.c_str(),"1\0")==0 | strcmp((char*)MsgStr.c_str(),"3\0")==0){
-                                printf("Client with ID:%d result are %d of 2\r\n", pData.CliID,result);
-                                    
-                            }
-                                CurQst=1;
-                                State=4;
-                                  
-                                char* tmp_path = (char*)calloc(50, sizeof(char));
-                                memmove(tmp_path, "./reg/", strlen("./reg/"));
-                                strcat(tmp_path,reg_name);
-                                FILE* file_user = fopen(tmp_path,"w");
-                                char* tmp_res = (char*)calloc(50, sizeof(char));
-                                sprintf(tmp_res,"%d",result);
-                                fputs(tmp_res,file_user);
-                                fclose(file_user);
-                                    
-                                result=0;
-                         }
-                    break;*/
-        }
-    }
-    return true;
-};
-
-// Функция приема сообщений от клиентов
-
-bool ListenRecv(ClientID& From, std::string& MsgStr, ListenThInput& pData) {
-    char recvbuf[4096];
-
-    int res = recv(pData.ClientSocket, recvbuf, 1024, 0);
-
-    printf("Received %d symbols!\n", res);
-    //if(res==0) {printf("Connection closed\r\n"); return false;}
-    //else if(res==-1) {printf("Receive failed\r\n"); return false;}
-    //else
-    if (res > 0) {
-        MsgStr.clear();
-        for (int i = 0; i < res; i++)
-            if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
-                MsgStr.push_back(recvbuf[i]);
-    }
-    return true;
-};
-
-/*Функция регистрации клиентов*/
-bool register_user(char* user_name, CTcpServer* pData, ClientID id) {
-    bool have = false;
-    for (int i = 0; i < pData->users.size(); i++) {
-        if (strcmp(pData->users[i], user_name) == 0) {
-            have = true;
-        }
-    }
-    char* tmp2 = (char*) calloc(50, sizeof (char));
-    memmove(tmp2, user_name, strlen(user_name));
-    char* tmp_path = (char*) calloc(50, sizeof (char));
-    memmove(tmp_path, "./reg/", strlen("./reg/"));
-    strcat(tmp_path, tmp2);
-
-    if (!have) // если пользователь первый раз
-    {
-        pData->users.push_back(user_name);
-        FILE* file = fopen("./reg/users.txt", "a");
-        char* tmp = (char*) calloc(50, sizeof (char));
-        memmove(tmp, user_name, strlen(user_name));
-        strcat(tmp, (char*) "\r\n");
-        fputs(tmp, file);
-        fclose(file);
-        FILE* file_user = fopen(tmp_path, "w");
-        fputs("0", file_user);
-        fclose(file_user);
-        return true;
-    } else //если пользователь уже зарегестрирован
-    {
-        FILE* file_user2 = fopen(tmp_path, "r");
-        char* tmp3 = (char*) calloc(50, sizeof (char));
-        char* tmp4 = (char*) calloc(50, sizeof (char));
-        strcat(tmp3, "\nYour last result ");
-        fgets(tmp4, 2, file_user2);
-        strcat(tmp3, tmp4);
-        pData->SendTo(tmp3, id);
-        fclose(file_user2);
-        return false;
-    }
-}
+}*/

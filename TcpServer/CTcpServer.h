@@ -5,24 +5,7 @@
 #include <fstream>
 #include <string>
 #include "time.h"
-
-#define USERS_FOLDER "./users/"
-#define MESSAGE_FILE "/messages"
-#define PASSW_FILE   "/password"
-
-#define MES_ID          "<id>"
-#define MES_ADDR        "<from>"
-#define MES_DATE_TIME   "<date/time>"
-#define MES_LEN         "<len>"
-#define MES_STATE       "<state>"             // message read/unread/deleted
-
-const int a[] = {1, 2, 3};
-
-const int MESSAGE_STATES[] = {0, 1, 2 };
-
-#define MSTATE_NORMAL 0 // position of normal value
-#define MSTATE_DELETED 1 // position of deleted value
-#define MSTATE_UNREAD 2 // position of unread value
+#include "ServerWorker.h"
 
 typedef unsigned short  USHORT;
 typedef int             SOCKET;

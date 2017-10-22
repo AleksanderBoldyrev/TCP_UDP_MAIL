@@ -5,6 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>CTcpServer.h</itemPath>
+      <itemPath>ServerWorker.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -14,6 +15,7 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>CTcpServer.cpp</itemPath>
+      <itemPath>ServerWorker.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
@@ -45,6 +47,10 @@
       </item>
       <item path="CTcpServer.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="ServerWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ServerWorker.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="stdinc.h" ex="false" tool="3" flavor2="0">
@@ -70,6 +76,10 @@
       <item path="CTcpServer.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="CTcpServer.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="ServerWorker.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="ServerWorker.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="main.cpp" ex="false" tool="1" flavor2="0">
       </item>
