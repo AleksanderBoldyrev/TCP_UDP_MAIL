@@ -31,7 +31,7 @@ int StrIn(char* pBuf, int BufSize, char* Delim="\r\n\0")
 };
 
 int main(int argc, char** argv) {
-    setlocale(LC_ALL, "Russian");
+    setlocale(LC_ALL, "en_US.UTF-8");
     char str[512];
     CTcpServer Server;
     Server.StartAccept(5555);

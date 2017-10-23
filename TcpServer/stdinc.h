@@ -18,8 +18,11 @@
 #include <signal.h>
 #include <assert.h>
 #include <string>
+#include <sstream> 
 #include <string.h>
 #include <sys/stat.h>
+#include <semaphore.h>
+#include <fcntl.h>
 //#include <sys/types.h>
 
 #include "CTcpServer.h"

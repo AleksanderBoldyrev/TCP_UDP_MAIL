@@ -38,14 +38,15 @@ typedef int             SOCKET;
 
 using namespace std;
 
-struct Message
+class Message
 {
+public:
     unsigned long id;
-    string* username;
-    string* date_time;
+    string username;
+    string date_time;
     unsigned long len;
     int state;
-    string* body;
+    string body;
 };
 
 class ServerWorker
@@ -71,9 +72,13 @@ private:
     string DeleteMes(const string& username, const string& mesNumber);
     string ResendMes(const string& username, const string& mesNumber);
     string MessageToString(const Message& m);
-    unsigned long ReadAllMes(const string& username, Message* mes);
-    bool ReadOneMes(const string& username, const unsigned long& id, Message* mes);
+    Message** ReadAllMes(const string& username, unsigned long& size);
+    Message* ReadOneMes(const string& username, const unsigned long& id, bool& res);
     bool DeleteOneMes(const string& username, const unsigned long& id);
+    bool WriteMessages(const string& username, Message** m, const unsigned long& size);//const Message** m, const unsigned long& size);
+    bool checkUser(const string& name);
+    void openSem(const string& name);
+    void closeSem(const string& name);
     
     bool ListenRecv(std::string& MsgStr);
     void closeSocket();
