@@ -3,9 +3,12 @@ Client-Server application, implementing simple mail functionality.
 
 To emulate client app, use "nc localhost \<num\>", where \<num\> - number of the socket port.
 
-============================================\n
-TcpServer - Linux\n
-TcpClient - Windows\n
+============================================
 
-UdpServer - Windows\n
-UdpClient - Linux\n
+TcpServer - Linux
+
+TcpClient - Windows
+
+UdpServer - Windows
+
+UdpClient - Linux
