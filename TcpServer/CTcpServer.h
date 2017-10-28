@@ -97,32 +97,9 @@ public:
     CTcpServer();
     CTcpServer(const CTcpServer& orig);
     virtual ~CTcpServer();
-
-    void Destroy();
-
     void StartAccept(USHORT Port);
-    void StopAccept(bool bWaitForThreadClosed=true);
-
     void StartListenTh(SOCKET Sock);
-    void StopListenTh(ClientID ID, bool bWaitForThreadClosed=true);
-
-    void DisconnectClient(ClientID ID);
-    void DisconnectAll();
-
-    void OnMessage(ClientID From, std::string MsgStr, int State, int CurQst, int result);
-    char* removeLastSymbol(char* str);
-    /*string RegisterNewUser(const string &data, bool &res);
-    string LoginNewUser(const string &data, bool &res, string& username);
-    string DeleteUser(const string& username);
-    string GetPasswFilePth(const string& username);
-    string GetMessageFilePth(const string& username);
-    unsigned long AddMessage(const string& message, const string& username);*/
-    
-    void SendTo(const char* MsgStr, const ClientID CliID);
-    std::vector<char*> users;
 private:
-
-    ClientsMapArray ClientsMap;
     ThreadInfo AcceptThInfo;
     ClientID LastClientID;
     SOCKET AcceptSock;

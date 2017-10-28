@@ -9,7 +9,9 @@
 ServerWorker::ServerWorker() {
 }
 
-ServerWorker::~ServerWorker() {
+ServerWorker::~ServerWorker()
+{
+    closeSocket();
 }
 
 void ServerWorker::init(SOCKET s) {
@@ -30,11 +32,11 @@ bool ServerWorker::mainLoop() {
 
     string buf;
     bool RegisterState, LoginState;
-    //char* reg_name = (char*) calloc(50, sizeof (char));
     while (true) {
         switch (State) {
                 // Main menu
-            case 1: sendTo("* MAIL *\n");
+            case 1: 
+                sendTo("* MAIL *\n");
                 sendTo("Select the following items:\n");
                 if (currentUserName.size() > 0) sendTo("1 - Send message\n");
                 sendTo("2 - Exit\n");
@@ -50,17 +52,12 @@ bool ServerWorker::mainLoop() {
                 sendTo("Enter your option: ");
                 break;
 
-            /*case 2:
-                sendTo("Enter your message: ");
-                State = 2;
-                break;*/
             case 2:
                 sendTo("Enter, whom you would like to send: ");
                 State = 2;
                 break;
 
             case 3: printf("Client with ID: %d is disconnect!\n", socket);
-                //pData.pParent->DisconnectClient(pData.CliID);
                 closeSocket();
                 return true;
                 break;
@@ -78,10 +75,12 @@ bool ServerWorker::mainLoop() {
                 State =4;
                 break;
 
-            case 5: //sendTo("Wrong input. Press any key.");
+            case 5: 
+                sendTo("Wrong input. Press any key.");
                 State = 4;
                 break;
-            case 6: sendTo("You are about to sign up. Enter the username consisting of <username>@<password>\n");
+            case 6: 
+                sendTo("You are about to sign up. Enter the username consisting of <username>@<password>\n");
                 sendTo("Enter your option: ");
                 State = 5;
                 break;
@@ -132,7 +131,6 @@ bool ServerWorker::mainLoop() {
                 if (currentUserName.size() > 0) 
                 {
                     sendTo("Really delete user? ('Y' - yes, <all other> - no): ");
-                    //sendTo("Deleting your account.\n");
                     State = 7;
                 } 
                 else 
@@ -156,7 +154,7 @@ bool ServerWorker::mainLoop() {
             case 12:
                 sendTo("You wanted to see the list of unread messages\n");
                 sendTo("\nPress any key.\n");
-                    State = 8;
+                State = 8;
                 break;
             case 13:
                 if (errMessage.size() == 0) 
@@ -178,7 +176,7 @@ bool ServerWorker::mainLoop() {
             case 14:
                 sendTo("You wanted to see the list of all messages\n");
                 sendTo("Press any key.\n");
-                    State = 9;
+                State = 9;
                 break;
             case 15:
                 if (errMessage.size() == 0) 
@@ -199,7 +197,7 @@ bool ServerWorker::mainLoop() {
                 break;
             case 16:
                 sendTo("You wanted to see the exact message. Please, enter the number of your message: \n");
-                    State = 10;
+                State = 10;
                 break;
             case 17:
                 if (errMessage.size() == 0) 
@@ -220,7 +218,7 @@ bool ServerWorker::mainLoop() {
                 break;
             case 18:
                 sendTo("You wanted to delete the exact message. Please, enter the number of your message: \n");
-                    State = 11;
+                State = 11;
                 break;
             case 19:
                 if (errMessage.size() == 0) 
@@ -238,8 +236,8 @@ bool ServerWorker::mainLoop() {
                 }
                 break;    
             case 20:
-                sendTo("You wanted to resend the exact message. Please, enter the message number and destination-user in format <number>@<user>:\n");
-                    State = 12;
+                sendTo("You wanted to resend the exact message. Enter the destination username:\n"); //Please, enter the message number and destination-user in format <number>@<user>:\n");
+                State = 12;
                 break;
             case 21:
                 if (errMessage.size() == 0) 
@@ -283,26 +281,30 @@ bool ServerWorker::mainLoop() {
                     State = 4;
                 }
                 break;
-                /*case 4: sendTo("*** Testing ***\n\nSelect a test:\n\n1 - <First class>\n2 - <Informatika>\n0 - In main menu\n\0");
-                    break;
-                // Тест First Class                    
-                case 5: sendTo("\n*** TEST <First class> ***\n\n\0");
-                        if(CurQst==1){
-                            sendTo("Question #1. What is 2x2 ?\n1)3\n2)4\n3)6\n\0");    
-                        }
-                        else if(CurQst==2){
-                            sendTo("Question #2. What color is a banana?\n1)Red\n2)Green\n3)Yellow\n\0");
-                        }
-                    break;
-                // Тест Informatika
-                case 6:  sendTo("\n*** TEST: <Informatika> ***\n\n\0");
-                         if(CurQst==1){
-                            sendTo("Question #1. How many bytes in kilobyte?\n1)1024 byte\n2)8 byte\n3)512 byte\n\0");    
-                         }
-                         else if(CurQst==2){
-                            sendTo("Question #2. Turn  4 in the binary system\n1)101\n2)100\n3)1000\n\0");
-                         }
-                    break;*/
+            case 24:
+                if (isNameValid) 
+                {
+                    sendTo("Enter the message to send: ");
+                    State = 13;
+                }
+                else 
+                {
+                    sendTo("The destination username is not valid. Please, try again.");
+                    State = 4;
+                }
+                break;
+            case 25:
+                if (isNameValid) 
+                {
+                    sendTo("Enter the number of message to resend: ");
+                    State = 14;
+                }
+                else 
+                {
+                    sendTo("The destination username is not valid. Please, try again.");
+                    State = 4;
+                }
+                break;
         }
 
         if (State != 8) if (!ListenRecv(MsgStr)) return false;
@@ -355,15 +357,10 @@ bool ServerWorker::mainLoop() {
                 break;
 
             case 2:
-                /*if(register_user((char*)MsgStr.c_str(),pData.pParent,pData.CliID))
-                        sendTo("Registration finished!\0");
-                memmove(reg_name, (char*)MsgStr.c_str(), strlen((char*)MsgStr.c_str())); */
-                
-                //MessageBuf = MsgStr;
-                //mesId = AddMessage(MsgStr, currentUserName, MESSAGE_STATES[MSTATE_NORMAL]);
-                //mesId = AddMessage(MsgStr, whomUserName, MESSAGE_STATES[MSTATE_NORMAL]);
                 isNameValid = checkUser(MsgStr);
-                State = 4;
+                if (isNameValid) sendToUserName = MsgStr;
+                else sendToUserName = "";
+                State = 24;
                 break;
 
             case 3:
@@ -405,22 +402,28 @@ bool ServerWorker::mainLoop() {
                 State = 19;
                 break;
             case 12:
-                errMessage = ResendMes(currentUserName, MsgStr);
-                State = 21;
+                isNameValid = checkUser(MsgStr);
+                if (isNameValid) sendToUserName = MsgStr;
+                else sendToUserName = "";
+                State = 25;
                 break;
             case 13:
                 isSent = true;
                 MessageBuf = MsgStr;
                 if (currentUserName.compare(sendToUserName) != 0) 
                 {
-                    mesId = AddMessage(MsgStr, currentUserName, MESSAGE_STATES[MSTATE_NORMAL]);
+                    mesId = AddMessage(MsgStr, currentUserName, MESSAGE_STATES[MSTATE_NORMAL], currentUserName);
                     if (mesId == 0) 
                         isSent = false;
                 }
-                mesId = AddMessage(MsgStr, sendToUserName, MESSAGE_STATES[MSTATE_UNREAD]);
+                mesId = AddMessage(MsgStr, sendToUserName, MESSAGE_STATES[MSTATE_UNREAD], currentUserName);
                 if (mesId == 0) 
                     isSent = false;
                 State = 23;
+                break;
+            case 14:
+                errMessage = ResendMes(currentUserName, MsgStr, sendToUserName);
+                State = 21;
                 break;
         }
     }
@@ -583,26 +586,9 @@ string ServerWorker::DeleteUser(const string& username) {
     return "";
 }
 
-unsigned long ServerWorker::AddMessage(const string& message, const string& username, const int &state) {
+unsigned long ServerWorker::AddMessage(const string& message, const string& username, const int &state, const string& from) {
     string buf;
-    unsigned long lastId = 1;
-    ifstream inp(GetMessageFilePth(username).c_str());
-    if (inp.good()) {
-        while (!inp.eof()) {
-            buf.clear();
-            inp >> buf;
-            if (buf.size() > 0) {
-                size_t position = buf.find(MES_ID);
-                if (position != string::npos) {
-                    buf.replace(0,string(MES_ID).size(), "");
-                    lastId = strtoul(buf.c_str(), NULL, 10) + 1;
-                    //cout << "Converted number: " << lastId-1;
-                }
-            }
-        }
-    }
-    inp.close();
-
+    unsigned long lastId = LastMesID(username) + 1;
     if (lastId > 0) {
         ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
         if (out.good()) {
@@ -610,7 +596,7 @@ unsigned long ServerWorker::AddMessage(const string& message, const string& user
             tm* timeinfo = localtime(&seconds);
 
             out << MES_ID << lastId << endl;
-            out << MES_ADDR << username << endl;
+            out << MES_ADDR << from << endl;
             out << MES_DATE_TIME << asctime(timeinfo); // << endl;
             out << MES_LEN << message.size() << endl;
             out << MES_STATE << MESSAGE_STATES[state] << endl;
@@ -624,11 +610,13 @@ unsigned long ServerWorker::AddMessage(const string& message, const string& user
     return lastId;
 }
 
-bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size)//const Message** m, const unsigned long& size)
+bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
 {
     if (m!=NULL && size>=0)
     {
-        ofstream out(GetMessageFilePth(username).c_str(), ios_base::trunc);
+        ofstream out;
+        if (ioMode) out.open(GetMessageFilePth(username).c_str(), ios_base::trunc);
+        else out.open(GetMessageFilePth(username).c_str(), ios_base::app);
         if (out.good())
         {
             if (size > 0) 
@@ -658,7 +646,6 @@ bool ServerWorker::WriteMessages(const string& username, Message** m, const unsi
 
 string ServerWorker::ShowUnreadMes(const string& username, string& buf)
 {
-    // TODO: mark unread->read!!!
     buf.clear();
     Message** m;
     unsigned long size;
@@ -668,14 +655,26 @@ string ServerWorker::ShowUnreadMes(const string& username, string& buf)
     if (size>0)
     {
         for (unsigned long i=0; i<size; i++)
-            if (m[i][0].state == MSTATE_UNREAD) 
+        {
+            if (m[i] != NULL)
             {
-                buf.append(MessageToString(m[i][0]));
-                m[i][0].state = MSTATE_NORMAL;
-                unrCount++;
-                changes = true;
+                if (m[i][0].state == MSTATE_UNREAD) 
+                {
+                    buf.append(MessageToString(m[i][0]));
+                    m[i][0].state = MSTATE_NORMAL;
+                    unrCount++;
+                    changes = true;
+                }
             }
-        if (changes) WriteMessages(username, m, size);
+        }
+        if (changes) WriteMessages(username, m, size, true);
+        for (unsigned long i=0; i<size; i++)
+        {
+            if (m[i] != NULL)
+            {
+                delete m[i];
+            }
+        }
     }
     else
         return "No messages found!\n";
@@ -692,10 +691,29 @@ string ServerWorker::ShowAllMes(const string& username, string& buf)
     Message** m;
     unsigned long size;
     m = ReadAllMes(username, size);
+    bool changes = false;
     if (size>0)
     {
         for (unsigned long i=0; i<size; i++)
-            buf.append(MessageToString(m[i][0]));
+        {
+            if (m[i] != NULL)
+            {
+                buf.append(MessageToString(m[i][0]));
+                if (m[i][0].state == MSTATE_UNREAD) 
+                {
+                    m[i][0].state = MSTATE_NORMAL;
+                    changes = true;
+                }
+            }
+        }
+        if (changes) WriteMessages(username, m, size, true);
+        for (unsigned long i=0; i<size; i++)
+        {
+            if (m[i] != NULL)
+            {
+                delete m[i];
+            }
+        }
     }
     else
         return "No messages found!\n"; 
@@ -715,6 +733,7 @@ string ServerWorker::ShowExactMes(const string& username, string& buf, const str
         buf = MessageToString(*m);
     else
         err = "The message is not found.";
+    if (m != NULL) delete m;
     return err;
 }
 
@@ -727,9 +746,25 @@ string ServerWorker::DeleteMes(const string& username, const string& mesNumber)
     return "";
 }
 
-string ServerWorker::ResendMes(const string& username, const string& mesNumber)
+string ServerWorker::ResendMes(const string& from, const string& mesNumber, const string& to)
 {
-    
+    unsigned long num = strtoul(mesNumber.c_str(), NULL, 10);
+    if (num>0)
+    {
+        Message* m = NULL;
+        bool res = false;
+        m = ReadOneMes(from, num, res);
+        if (res && m != NULL) 
+        {
+            m->id = LastMesID(to) + 1;
+            res = WriteMessages(to, &m, 1, false);
+            if (m != NULL) delete m;
+            if (!res) return "Couldn't open the file of destination user.";
+        }
+        else
+            return "Couldn't find the message.";
+    }
+    return "";
 }
 
 string ServerWorker::MessageToString(const Message& m)
@@ -761,17 +796,27 @@ string ServerWorker::MessageToString(const Message& m)
     return res.str();
 }
 
+unsigned long ServerWorker::LastMesID(const string& username)
+{
+    //Don't add mutex here, blocking should be in the function, which calls this one above!!!
+    unsigned long res = 0;
+    unsigned long size = 0;
+    Message ** buf = ReadAllMes(username, size);
+    if (size>0 && buf!=NULL)
+    {
+        for (unsigned long i = 0; i < size; i++)
+            if (buf[i]!=NULL)
+            {
+                if (res < buf[i][0].id)
+                    res = buf[i][0].id;
+                delete buf[i];
+            }
+    }
+    return res;
+}
+
 Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
 {
-    /*
-     unsigned long id;
-    string username;
-    string date_time;
-    unsigned long len;
-    int state;
-    string body;
-    
-     *  */
     Message** mes = NULL;
     res = 0;
     string buf;
@@ -949,7 +994,14 @@ bool ServerWorker::DeleteOneMes(const string& username, const unsigned long& id)
         }
     }
     if (res)
-        res = WriteMessages(username, buf, size);
+        res = WriteMessages(username, buf, size, true);
+    for (unsigned long i=0; i<size; i++)
+        {
+            if (buf[i] != NULL)
+            {
+                delete buf[i];
+            }
+        }
     return res;
 }
 
@@ -968,7 +1020,9 @@ bool ServerWorker::ListenRecv(std::string& MsgStr) {
     return true;
 };
 
-void ServerWorker::closeSocket() {
+void ServerWorker::closeSocket()
+{
+    sendTo("Closing connection.");
     if (shutdown(socket, SHUT_RDWR) == -1)
         printf("Socket #%d shutdown failed\n", socket);
     if (close(socket) == -1)

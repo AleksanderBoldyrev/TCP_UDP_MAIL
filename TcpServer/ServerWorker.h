@@ -65,18 +65,20 @@ private:
     string LoginNewUser(const string &data, bool &res, string& username);
     string RegisterNewUser(const string &data, bool &res);
     string DeleteUser(const string& username);
-    unsigned long AddMessage(const string& message, const string& username, const int &state);
+    unsigned long AddMessage(const string& message, const string& username, const int &state, const string& from);
     string ShowUnreadMes(const string& username, string& buf);
     string ShowAllMes(const string& username, string& buf);
     string ShowExactMes(const string& username, string& buf, const string& mesNumber);
     string DeleteMes(const string& username, const string& mesNumber);
-    string ResendMes(const string& username, const string& mesNumber);
+    string ResendMes(const string& from, const string& mesNumber, const string& to);
     string MessageToString(const Message& m);
     Message** ReadAllMes(const string& username, unsigned long& size);
     Message* ReadOneMes(const string& username, const unsigned long& id, bool& res);
     bool DeleteOneMes(const string& username, const unsigned long& id);
-    bool WriteMessages(const string& username, Message** m, const unsigned long& size);//const Message** m, const unsigned long& size);
+    bool WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode);//const Message** m, const unsigned long& size);
     bool checkUser(const string& name);
+    unsigned long LastMesID(const string& username);
+    
     void openSem(const string& name);
     void closeSem(const string& name);
     
