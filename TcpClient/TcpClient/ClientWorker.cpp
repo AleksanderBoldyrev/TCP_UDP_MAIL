@@ -77,12 +77,18 @@ int ClientWorker::readN(SOCKET s, char* buf, int remain, int flags) {
 	return rcb;
 }
 
-void ListenLoop(const int& socket)
+void ClientWorker::ListenLoop(const int& socket)
 {
-	const unsigned short SIZE = 512;
-	char buffer[SIZE];
-	unsigned int n;
+	string buffer;
+	short state = 0;
 	int error = 0;
+	int c = 0;
+	state = STATE::START;
+	string buf;
+	unsigned int answerCode;
+	unsigned short numArgCount;
+	string* args;
+
 	while (1)
 	{
 		error = WSAGetLastError();
@@ -91,21 +97,110 @@ void ListenLoop(const int& socket)
 			printf("Socket error: %d", error);
 			break;
 		}
-		memset(buffer, 0, SIZE);
-		n = recv(socket, buffer, SIZE, 0);
-		if (n >= 0)
+		switch (state)
 		{
-			printf("%s", buffer);
-			memset(buffer, 0, SIZE);
-			scanf("&s", buffer);
-			//send(socket, buffer, strlen(buffer), 0);
-		}
-		else
-		{
-			printf("Socket error!");
+		case STATE::START:
+			sendTo(socket, serialize(STATE::START, 0, nullptr));
+			ListenRecv(socket, buf);
+			answerCode = parse(buf, numArgCount, args);
+			if (answerCode != STATE::NO_OPERATION)
+			{
+				if (numArgCount > 0 && args != nullptr)
+				{
+					if (strcmp(args[0].c_str(), API[STATE::SERV_OK].c_str()) == 0)
+					{
+						cout << "Connected to server successfully." << endl;
+						state = STATE::INIT;
+					}
+					else 
+						cout << "Smth went wrong [stcmp]" << endl;
+				}
+				else
+					cout << "Smth went wrong [numarg || args]" << endl;
+			}
+			else
+				cout << "Smth went wrong [ansCode]" << endl;
 			break;
+		case STATE::NO_OPERATION:
+
+			break;
+		case STATE::ANSWER:
+
+			break;
+		case STATE::INIT:
+			cout << "* MAIL *\n" << "2 - Exit\n" << "3 - Register\n" << "4 - Login\n" << endl;
+			break;
+		case STATE::OPCODE:
+
+			break;
+		case STATE::EXIT:
+
+			break;
+		case STATE::REG:
+
+			break;
+		case STATE::LOG:
+
+			break;
+		default:
+			printf("Smth went wrong.");
 		}
 	}
+}
+
+string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
+{
+	stringstream sstr;
+	sstr << opcode << DELIM_PARSE << numarg << DELIM_PARSE;
+	if (numarg > 0 && ss != nullptr)
+		for (int i = 0; i < numarg - 1; i++)
+		{
+			string temp = ss[i];
+			std::replace(temp.begin(), temp.end(), DELIM_PARSE, ' ');
+			sstr << temp << DELIM_PARSE;
+		}
+	return sstr.str();
+}
+
+unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, string* args)
+{
+	unsigned int res = STATE::NO_OPERATION;
+	if (input.size() > 0)
+	{
+		stringstream buf;
+		numarg = 0;
+		// find all delimeters
+		for (int i = 0; i < input.size(); i++)
+		{
+			if (input[i] == DELIM_PARSE)
+				numarg++;
+		}
+		// find all parts
+		if (numarg > 0)
+		{
+			args = new string[numarg-1];
+			string opcodeBuf;
+			unsigned short cc = 0;
+			for (int i = 0; i < input.size(); i++)
+			{
+				if (input[i] == DELIM_PARSE)
+				{
+					if (cc == 0)
+						opcodeBuf = buf.str();
+					else
+						args[cc - 1] = buf.str();
+					cc++;
+					buf.clear();
+				}
+				else
+					buf << input[i];
+			}
+			// args[0] is operation code
+			res = atoi(opcodeBuf.c_str());
+			numarg--;
+		}
+	}	
+	return res;
 }
 
 void ClientWorker::run(string host, unsigned short port)
@@ -160,4 +255,54 @@ void ClientWorker::run(string host, unsigned short port)
 			}
 		}
 	}
+}
+
+void ClientWorker::sendTo(SOCKET socket, const string& message)
+{
+	cout << "Send to server: " << message << endl;
+	int res = 0;
+	int size = message.size();
+	stringstream ss;
+	ss << size;
+	string s = ss.str();
+	//sprintf(s.c_str(), "%d", size);
+	while (s.size() < 10)
+	{
+		s.insert(s.begin(), '0');
+	}
+	s += message;
+	res = send(socket, s.c_str(), s.size(), 0);
+	//printf("String to send: %s", s.c_str());
+	if (res != s.size() )
+		printf("Send failed: %d != %d!\n", res, s.size());
+}
+
+bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
+{
+	char* c = new char[10];
+	unsigned int size = 0;
+	int ssize = recv(socket, c, 10, 0);
+	//printf("Size buffer: %s\n", c);
+	if (ssize == 10)
+	{
+		size = atoi(c);
+		//char* recvbuf = (char*)malloc((size)*sizeof(char));
+		char* recvbuf = new char[size];
+
+		int res = recv(socket, recvbuf, size, 0);
+		//printf("String received: %s\n", recvbuf);
+
+		//printf("Received %d symbols!\n", res);
+		if (res > 0)
+		{
+			MsgStr.clear();
+			for (int i = 0; i < res; i++)
+				if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
+					MsgStr.push_back(recvbuf[i]);
+		}
+	}
+	else
+		return false;
+	cout << "Recieved: " << MsgStr << endl;
+	return true;
 }
