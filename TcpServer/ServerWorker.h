@@ -16,6 +16,7 @@
 #define SERVERWORKER_H
 
 #include "stdinc.h"
+#include "API.h"
 
 #define USERS_FOLDER "./users/"
 #define MESSAGE_FILE "/messages"
@@ -62,8 +63,8 @@ private:
     SOCKET socket;
     string GetPasswFilePth(const string& username);
     string GetMessageFilePth(const string& username);
-    string LoginNewUser(const string &data, bool &res, string& username);
-    string RegisterNewUser(const string &data, bool &res);
+    string LoginNewUser(const string &uname, const string &passw,  bool &res);
+    string RegisterNewUser(const string &uname, const string &passw,  bool &res);
     string DeleteUser(const string& username);
     unsigned long AddMessage(const string& message, const string& username, const int &state, const string& from);
     string ShowUnreadMes(const string& username, string& buf);
@@ -78,6 +79,10 @@ private:
     bool WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode);//const Message** m, const unsigned long& size);
     bool checkUser(const string& name);
     unsigned long LastMesID(const string& username);
+    STATE parseOpCode(const string& buf);
+    string serialize(unsigned int opcode, unsigned short numarg, const string * ss);
+    STATE parse(const string& input, unsigned short& numarg, string* args);
+    
     
     void openSem(const string& name);
     void closeSem(const string& name);

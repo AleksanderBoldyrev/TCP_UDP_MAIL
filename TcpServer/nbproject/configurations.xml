@@ -4,6 +4,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>API.h</itemPath>
       <itemPath>CTcpServer.h</itemPath>
       <itemPath>ServerWorker.h</itemPath>
     </logicalFolder>
@@ -43,6 +44,8 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
+      <item path="API.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="CTcpServer.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="CTcpServer.h" ex="false" tool="3" flavor2="0">
@@ -73,6 +76,8 @@
           <developmentMode>5</developmentMode>
         </fortranCompilerTool>
       </compileType>
+      <item path="API.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="CTcpServer.cpp" ex="false" tool="1" flavor2="0">
       </item>
       <item path="CTcpServer.h" ex="false" tool="3" flavor2="0">
