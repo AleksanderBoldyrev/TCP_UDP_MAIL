@@ -38,6 +38,9 @@ bool ServerWorker::mainLoop() {
     unsigned short numarg; 
     string* args = NULL;
     string* args2 = NULL;
+    string ff;
+    
+    Message * m = NULL;
     
     while (true) {
         bool res = ListenRecv(MsgStr);
@@ -49,75 +52,127 @@ bool ServerWorker::mainLoop() {
                 case START:  
                     args2 = new string[1];
                     args2[0] = API[SERV_OK];
-                    sendTo(serialize(ANSWER, 1, args2));
-                    delete args2;
-                break;
-            case EXIT: 
-                printf("Client with ID: %d is disconnect!\n", socket);
-                closeSocket();
-                return true;
-                break;
-            case REG: 
-                if (args != NULL && numarg > 1) 
-                {
-                    errMessage = RegisterNewUser(args[0], args[1], RegisterState);
-                    if (RegisterState)
-                    {
-                        args2 = new string[1];
-                        args2[0] = API[SERV_OK];
-                        sendTo(serialize(ANSWER, 1, args2));
-                        delete args2;
-                    }
-                    else 
-                    {
-                        args2 = new string[2];
-                        args2[0] = API[NO_OPERATION];
-                        args2[1] = errMessage;
-                        sendTo(serialize(ANSWER, 2, args2));
-                        delete[] args2;
-                    }
-                }
-                else 
-                {
-                    args2 = new string[2];
-                    args2[0] = API[NO_OPERATION];
-                    args2[1] = "Not valid args.";
-                    sendTo(serialize(ANSWER, 2, args2));
+                    ff = serialize(ANSWER, 1, args2);
+                    sendTo(ff);
                     delete[] args2;
-                }
-                break;
-            case LOG: 
-                if (args != NULL && numarg > 1) 
-                {
-                    errMessage = LoginNewUser(args[0], args[1], LoginState);
-                    if (LoginState)
-                    {
-                        args2 = new string[1];
-                        args2[0] = API[SERV_OK];
-                        sendTo(serialize(ANSWER, 1, args2));
-                        delete args2;
-                    }
-                    else 
-                    {
-                        args2 = new string[2];
-                        args2[0] = API[NO_OPERATION];
-                        args2[1] = errMessage;
-                        sendTo(serialize(ANSWER, 2, args2));
-                        delete[] args2;
-                    }
-                }
-                else 
-                {
-                    args2 = new string[2];
-                    args2[0] = API[NO_OPERATION];
-                    args2[1] = "Not valid args.";
-                    sendTo(serialize(ANSWER, 2, args2));
-                    delete[] args2;
-                }
-                break;
-                default:
-                    cout << "Unknown state: "<< State << endl;
                     break;
+                case EXIT: 
+                    printf("Client with ID: %d is disconnect!\n", socket);
+                    closeSocket();
+                    return true;
+                    break;
+                case REG: 
+                    if (args != NULL && numarg > 1) 
+                    {
+                        errMessage = RegisterNewUser(args[0], args[1], RegisterState);
+                        if (RegisterState)
+                        {
+                            args2 = new string[1];
+                            args2[0] = API[SERV_OK];
+                            sendTo(serialize(ANSWER, 1, args2));
+                            delete[] args2;
+                        }
+                        else 
+                        {
+                            args2 = new string[2];
+                            args2[0] = API[NO_OPERATION];
+                            args2[1] = errMessage;
+                            sendTo(serialize(ANSWER, 2, args2));
+                            delete[] args2;
+                        }
+                    }
+                    else 
+                    {
+                        args2 = new string[2];
+                        args2[0] = API[NO_OPERATION];
+                        args2[1] = "Not valid args.";
+                        sendTo(serialize(ANSWER, 2, args2));
+                        delete[] args2;
+                    }
+                    break;
+                case LOG: 
+                    if (args != NULL && numarg > 1) 
+                    {
+                        errMessage = LoginNewUser(args[0], args[1], LoginState);
+                        if (LoginState)
+                        {
+                            args2 = new string[1];
+                            args2[0] = API[SERV_OK];
+                            sendTo(serialize(ANSWER, 1, args2));
+                            delete[] args2;
+                        }
+                        else 
+                        {
+                            args2 = new string[2];
+                            args2[0] = API[NO_OPERATION];
+                            args2[1] = errMessage;
+                            sendTo(serialize(ANSWER, 2, args2));
+                            delete[] args2;
+                        }
+                    }
+                    else 
+                    {
+                        args2 = new string[2];
+                        args2[0] = API[NO_OPERATION];
+                        args2[1] = "Not valid args.";
+                        sendTo(serialize(ANSWER, 2, args2));
+                        delete[] args2;
+                    }
+                    break;
+                    case LUG:
+                            cout << "Logging out." << endl;
+                            currentUserName = "";
+                            break;
+                    case SND:
+                            cout << "Logging out." << endl;
+                            if (args != NULL && numarg > 1) 
+                            {
+                                m = new Message();
+                                if (m->deserialize(args[1]) && args[0].size() > 0)
+                                {
+                                    mesId = AddMessage(m, args[0], currentUserName);
+                                    if (mesId == 0) 
+                                    {
+                                        args2 = new string[2];
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = "Error while sending the message.";
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                                    else 
+                                    {
+                                        args2 = new string[2];
+                                        m->body = "";
+                                        args2[0] = API[SERV_OK];
+                                        args2[1] = m->serialize();
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                                }
+                                delete m;
+                            }
+                            break;
+                    case DEL_US:
+                            cout << "Deleting user." << endl;
+                            break;
+                    case DEL_MES:
+                            cout << "Deleting message." << endl;
+                            break;
+                    case SH_UNR:
+                            cout << "Showing unread messages." << endl;
+                            break;
+                    case SH_ALL:
+                            cout << "Showing all messages." << endl;
+                            break;
+                    case SH_EX:
+                            cout << "Showing the exact message." << endl;
+                            break;
+                    case RSND:
+                            cout << "Resending the exact message." << endl;
+                            break;
+                    default:
+                        cout << "Unknown state: " << State << endl;
+                        break;
             }
         }                
     }
@@ -180,6 +235,7 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
         ifstream fin(GetPasswFilePth(uname).c_str());
         if (!fin.good()) {
             string pth = "./users/";
+            mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             pth += uname;
 
             stat = mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -273,28 +329,33 @@ string ServerWorker::DeleteUser(const string& username) {
     return "";
 }
 
-unsigned long ServerWorker::AddMessage(const string& message, const string& username, const int &state, const string& from) {
-    string buf;
+unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from) {
     unsigned long lastId = LastMesID(username) + 1;
-    if (lastId > 0) {
-        ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
-        if (out.good()) {
-            time_t seconds = time(NULL);
-            tm* timeinfo = localtime(&seconds);
-
-            out << MES_ID << lastId << endl;
-            out << MES_ADDR << from << endl;
-            out << MES_DATE_TIME << asctime(timeinfo); // << endl;
-            out << MES_LEN << message.size() << endl;
-            out << MES_STATE << MESSAGE_STATES[state] << endl;
-            out << message << endl;
-        }
-        else
-            lastId = 0;
-        out.close();
+    if (lastId > 0 && message != NULL) {
+        time_t seconds = time(NULL);
+        tm* timeinfo = localtime(&seconds);
+        message->date_time = asctime(timeinfo);
+        message->id = lastId;
+        message->state = MSTATE_UNREAD;
+        message->username = from;
+        WriteToFile(username, message);
     }
-
     return lastId;
+}
+
+void ServerWorker::WriteToFile(const string& username, Message* message)
+{
+    ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
+        if (out.good() && message != NULL) {
+            out << MES_ID << message->id << endl;
+            out << MES_ADDR << message->username << endl;
+            out << MES_DATE_TIME << message->date_time; // << endl;
+            out << MES_LEN << message->len << endl;
+            out << MES_STATE << MESSAGE_STATES[message->state] << endl;
+            out << message->body << endl;
+            
+        }
+        out.close();
 }
 
 bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
@@ -736,12 +797,12 @@ void ServerWorker::sendTo(const string& message) {
 }
 
 
-string ServerWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
+string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << opcode << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << API[opcode] << DELIM_PARSE << numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != NULL)
-		for (int i = 0; i < numarg - 1; i++)
+		for (int i = 0; i <= numarg - 1; i++)
 		{
 			string temp = ss[i];
 			std::replace(temp.begin(), temp.end(), DELIM_PARSE, ' ');
@@ -750,7 +811,7 @@ string ServerWorker::serialize(unsigned int opcode, unsigned short numarg, const
 	return sstr.str();
 }
 
-STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* args)
+STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &args)
 {
 	STATE res = NO_OPERATION;
 	if (input.size() > 0)
@@ -774,18 +835,24 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* a
 				if (input[i] == DELIM_PARSE)
 				{
 					if (cc == 0)
-						opcodeBuf = buf.str();
-					else
-						args[cc - 1] = buf.str();
+                                        {
+                                            opcodeBuf = buf.str();
+                                        }
+					else if (cc > 1)
+                                        {
+                                            args[cc - 2] = buf.str();
+                                        }
 					cc++;
-					buf.clear();
+					buf.str(std::string());
 				}
 				else
-					buf << input[i];
+                                {
+                                    buf << input[i];
+                                }
 			}
 			// args[0] is operation code
 			res = parseOpCode(opcodeBuf);
-			numarg--;
+			numarg-=2;
 		}
 	}	
 	return res;
@@ -833,7 +900,6 @@ STATE ServerWorker::parseOpCode(const string& buf)
   
     return res;
 }
-
 
 void ServerWorker::closeSocket()
 {

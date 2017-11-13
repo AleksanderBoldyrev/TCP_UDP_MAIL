@@ -22,33 +22,10 @@
 #define MESSAGE_FILE "/messages"
 #define PASSW_FILE   "/password"
 
-#define MES_ID          "<id>"
-#define MES_ADDR        "<from>"
-#define MES_DATE_TIME   "<date/time>"
-#define MES_LEN         "<len>"
-#define MES_STATE       "<state>"             // message read/unread/deleted
-
-const int MESSAGE_STATES[] = {0, 1, 2 };
-
-#define MSTATE_NORMAL 0     // position of normal value
-#define MSTATE_DELETED 1    // position of deleted value
-#define MSTATE_UNREAD 2     // position of unread value
-
 typedef unsigned short  USHORT;
 typedef int             SOCKET;
 
 using namespace std;
-
-class Message
-{
-public:
-    unsigned long id;
-    string username;
-    string date_time;
-    unsigned long len;
-    int state;
-    string body;
-};
 
 class ServerWorker
 {
@@ -66,7 +43,7 @@ private:
     string LoginNewUser(const string &uname, const string &passw,  bool &res);
     string RegisterNewUser(const string &uname, const string &passw,  bool &res);
     string DeleteUser(const string& username);
-    unsigned long AddMessage(const string& message, const string& username, const int &state, const string& from);
+    unsigned long AddMessage(Message* message, const string& username, const string& from);
     string ShowUnreadMes(const string& username, string& buf);
     string ShowAllMes(const string& username, string& buf);
     string ShowExactMes(const string& username, string& buf, const string& mesNumber);
@@ -80,9 +57,10 @@ private:
     bool checkUser(const string& name);
     unsigned long LastMesID(const string& username);
     STATE parseOpCode(const string& buf);
-    string serialize(unsigned int opcode, unsigned short numarg, const string * ss);
-    STATE parse(const string& input, unsigned short& numarg, string* args);
+    string serialize(STATE opcode, unsigned short numarg, const string * ss);
+    STATE parse(const string& input, unsigned short& numarg, string* &args);
     
+    void WriteToFile(const string& username, Message* message);    
     
     void openSem(const string& name);
     void closeSem(const string& name);
