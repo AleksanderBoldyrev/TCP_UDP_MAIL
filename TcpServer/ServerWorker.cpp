@@ -31,14 +31,19 @@ bool ServerWorker::mainLoop() {
     string sendToUserName;
     bool isNameValid;
     bool isSent;
+    bool mesFound = false;
 
     string buf;
-    bool RegisterState, LoginState;
+    bool RegisterState = false, LoginState = false;
     
     unsigned short numarg; 
     string* args = NULL;
     string* args2 = NULL;
     string ff;
+    unsigned long size;
+    int cc = 0;
+    
+    unsigned int unread = 0;
     
     Message * m = NULL;
     
@@ -99,6 +104,7 @@ bool ServerWorker::mainLoop() {
                             args2 = new string[1];
                             args2[0] = API[SERV_OK];
                             sendTo(serialize(ANSWER, 1, args2));
+                            currentUserName = args[0];
                             delete[] args2;
                         }
                         else 
@@ -122,20 +128,25 @@ bool ServerWorker::mainLoop() {
                     case LUG:
                             cout << "Logging out." << endl;
                             currentUserName = "";
+                            args2 = new string[1];
+                            args2[0] = API[SERV_OK];
+                            sendTo(serialize(ANSWER, 1, args2));
+                            delete[] args2;
                             break;
                     case SND:
-                            cout << "Logging out." << endl;
+                            cout << "Sending the message." << endl;
                             if (args != NULL && numarg > 1) 
                             {
                                 m = new Message();
                                 if (m->deserialize(args[1]) && args[0].size() > 0)
                                 {
-                                    mesId = AddMessage(m, args[0], currentUserName);
+                                    if (currentUserName.size() > 0) { mesId = AddMessage(m, args[0], currentUserName, errMessage); }
+                                    else { mesId = 0; }
                                     if (mesId == 0) 
                                     {
                                         args2 = new string[2];
                                         args2[0] = API[NO_OPERATION];
-                                        args2[1] = "Error while sending the message.";
+                                        args2[1] = "Error while sending the message ["+errMessage+"]";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
                                     }
@@ -154,21 +165,276 @@ bool ServerWorker::mainLoop() {
                             break;
                     case DEL_US:
                             cout << "Deleting user." << endl;
+                            if (currentUserName.size() > 0) 
+                            { 
+                                    errMessage = DeleteUser(currentUserName);
+                                    currentUserName = "";
+                                    args2 = new string[2];
+                                    if (errMessage.size() == 0)
+                                    {
+                                        args2[0] = API[SERV_OK];
+                                        args2[1] = "";
+                                    }
+                                    else
+                                    {
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = errMessage;
+                                    }
+                                    sendTo(serialize(ANSWER, 2, args2));
+                                    delete[] args2;  
+                            }  
                             break;
                     case DEL_MES:
                             cout << "Deleting message." << endl;
+                            if (args != NULL && numarg > 0) 
+                            {
+                                if (currentUserName.size() > 0) 
+                                {                                    
+                                        errMessage = DeleteMes(currentUserName, args[0]);
+                                        currentUserName = "";
+                                        args2 = new string[2];
+                                        if (errMessage.size() == 0)
+                                        {
+                                            args2[0] = API[SERV_OK];
+                                            args2[1] = "";
+                                        }
+                                        else
+                                        {
+                                            args2[0] = API[NO_OPERATION];
+                                            args2[1] = errMessage;
+                                        }
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;  
+                                } 
+                            }
                             break;
                     case SH_UNR:
+                            size = 0;
                             cout << "Showing unread messages." << endl;
+                            if (args != NULL && numarg >= 0) 
+                            {
+                                    if (currentUserName.size() > 0) 
+                                    { 
+                                        Message** mm;
+                                        mm = ReadAllMes(currentUserName, size);
+                                        bool changes = false;
+                                        if (size>0)
+                                        {
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    //buf.append(MessageToString(m[i][0]));
+                                                    if (mm[i][0].state == MSTATE_UNREAD) 
+                                                    {
+                                                        unread++;
+                                                    }
+                                                }
+                                            }
+                                            args2 = new string[unread+1];
+                                            args2[0] = API[SERV_OK];
+                                            cc = 1;
+                                            for (unsigned int i=0; i<size; i++)
+                                            {
+                                                if (mm[i][0].state == MSTATE_UNREAD) 
+                                                {
+                                                    args2[cc] = mm[i][0].serialize();
+                                                    changes = true;
+                                                    mm[i][0].state = MSTATE_NORMAL;
+                                                    cc++;
+                                                }
+                                            }
+                                            if (unread > 0) sendTo(serialize(ANSWER, unread+1, args2));
+                                            if (changes) WriteMessages(currentUserName, mm, size, true);
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    delete mm[i];
+                                                }
+                                            }
+                                            delete[] args2;
+                                        }
+                                        else
+                                            return "No messages found!\n"; 
+                                    }
+                                    if (unread == 0) 
+                                    {
+                                        args2 = new string[2];
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = "Error while showing unread the messages. No messages found.";
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                            }
                             break;
                     case SH_ALL:
+                            size = 0;
                             cout << "Showing all messages." << endl;
+                            if (args != NULL && numarg >= 0) 
+                            {
+                                    if (currentUserName.size() > 0) 
+                                    { 
+                                        Message** mm;
+                                        
+                                        mm = ReadAllMes(currentUserName, size);
+                                        bool changes = false;
+                                        if (size>0)
+                                        {
+                                            args2 = new string[size+1];
+                                            args2[0] = API[SERV_OK];
+                                            for (unsigned long i=1; i<=size; i++)
+                                            {
+                                                if (mm[i-1] != NULL)
+                                                {
+                                                    args2[i] = mm[i-1][0].serialize();
+                                                    if (mm[i-1][0].state == MSTATE_UNREAD) 
+                                                    {
+                                                        mm[i-1][0].state = MSTATE_NORMAL;
+                                                        changes = true;
+                                                    }
+                                                }
+                                            }
+                                            sendTo(serialize(ANSWER, size+1, args2));
+                                            if (changes) WriteMessages(currentUserName, mm, size, true);
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    delete mm[i];
+                                                }
+                                            }
+                                            delete[] args2;
+                                        }
+                                        else
+                                            return "No messages found!\n"; 
+                                    }
+                                    if (size == 0) 
+                                    {
+                                        args2 = new string[2];
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = "Error while showing all messages.";
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                            }
                             break;
                     case SH_EX:
+                            mesFound = false;
                             cout << "Showing the exact message." << endl;
+                            size = 0;
+                            if (args != NULL && numarg >= 1) 
+                            {
+                                    if (currentUserName.size() > 0) 
+                                    { 
+                                        mesId = atoi(args[0].c_str());
+                                        Message** mm;
+                                        mm = ReadAllMes(currentUserName, size);
+                                        bool changes = false;
+                                        if (size>0)
+                                        {
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    //buf.append(MessageToString(m[i][0]));
+                                                    if (mm[i][0].id == mesId) 
+                                                    {
+                                                        args2 = new string[2];
+                                                        args2[0] = API[SERV_OK];
+                                                        args2[1] = mm[i][0].serialize();
+                                                        mesFound = true;
+                                                        if (mm[i][0].state == MSTATE_UNREAD) 
+                                                        {
+                                                            mm[i][0].state = MSTATE_NORMAL;
+                                                            changes = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+                                            if (changes) WriteMessages(currentUserName, mm, size, true);
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    delete mm[i];
+                                                }
+                                            }
+                                            delete[] args2;
+                                        }
+                                        else
+                                            return "No messages found!\n"; 
+                                    }
+                                    if (!mesFound) 
+                                    {
+                                        args2 = new string[2];
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = "Error while showing the messages. No messages found.";
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                            }
                             break;
                     case RSND:
                             cout << "Resending the exact message." << endl;
+                            mesFound = false;
+                            size = 0;
+                            if (args != NULL && numarg >= 2) 
+                            {
+                                    if (currentUserName.size() > 0) 
+                                    { 
+                                        mesId = atoi(args[0].c_str());
+                                        Message** mm;
+                                        mm = ReadAllMes(currentUserName, size);
+                                        bool changes = false;
+                                        if (size>0)
+                                        {
+                                            args2 = new string[2];
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    if (mm[i][0].id == mesId) 
+                                                    {
+                                                        mesId = AddMessage(mm[i], args[1], currentUserName, errMessage);
+                                                        if (mesId == 0)
+                                                        {
+                                                            args2[0] = API[NO_OPERATION];
+                                                            args2[1] = "Error while resending the messages. Aim user not found.";
+                                                            //sendTo(serialize(ANSWER, 2, args2));
+                                                        }
+                                                        else 
+                                                        {
+                                                            args2[0] = API[SERV_OK];
+                                                            args2[1] = mm[i][0].serialize();
+                                                        }
+                                                        mesFound = true;
+                                                    }
+                                                }
+                                            }
+                                            if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+                                            for (unsigned long i=0; i<size; i++)
+                                            {
+                                                if (mm[i] != NULL)
+                                                {
+                                                    delete mm[i];
+                                                }
+                                            }
+                                            delete[] args2;
+                                        }
+                                        else
+                                            return "No messages found!\n"; 
+                                    }
+                                    if (!mesFound && size == 0) 
+                                    {
+                                        args2 = new string[2];
+                                        args2[0] = API[NO_OPERATION];
+                                        args2[1] = "Error while resending the messages. Message not found.";
+                                        sendTo(serialize(ANSWER, 2, args2));
+                                        delete[] args2;
+                                    }
+                            }
                             break;
                     default:
                         cout << "Unknown state: " << State << endl;
@@ -329,17 +595,24 @@ string ServerWorker::DeleteUser(const string& username) {
     return "";
 }
 
-unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from) {
+unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) {
     unsigned long lastId = LastMesID(username) + 1;
-    if (lastId > 0 && message != NULL) {
-        time_t seconds = time(NULL);
-        tm* timeinfo = localtime(&seconds);
-        message->date_time = asctime(timeinfo);
-        message->id = lastId;
-        message->state = MSTATE_UNREAD;
-        message->username = from;
-        WriteToFile(username, message);
+    bool isNameValid = false;
+    isNameValid = checkUser(username);
+    if (isNameValid)
+    {
+        if (lastId > 0 && message != NULL) {
+            time_t seconds = time(NULL);
+            tm* timeinfo = localtime(&seconds);
+            message->date_time = asctime(timeinfo);
+            message->id = lastId;
+            message->state = MSTATE_UNREAD;
+            message->username = from;
+            message->len = message->body.length();
+            WriteToFile(username, message);
+        }
     }
+    else return 0;
     return lastId;
 }
 
@@ -860,18 +1133,6 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
 
 STATE ServerWorker::parseOpCode(const string& buf)
 {
-    /*
-     SERV_OK = 0,
-	NO_OPERATION = 1,
-	ANSWER = 2,
-	START = 3,
-	INIT = 4,
-	OPCODE = 5,
-	EXIT = 6,
-	REG = 7,
-	LOG = 8,
-     * INSYS
-     */
     STATE res = NO_OPERATION;
   
         if (buf.compare(API[0])==0)
@@ -885,14 +1146,30 @@ STATE ServerWorker::parseOpCode(const string& buf)
         else if (buf.compare(API[4])==0)
                 return INIT;
         else if (buf.compare(API[5])==0)
-            return OPCODE;
+                return OPCODE;
         else if (buf.compare(API[6])==0)
-            return EXIT;
+                return EXIT;
         else if (buf.compare(API[7])==0)
                 return REG;
         else if (buf.compare(API[8])==0)
                 return LOG;
         else if (buf.compare(API[9])==0)
+                return LUG;
+        else if (buf.compare(API[10])==0)
+                return SND;
+        else if (buf.compare(API[11])==0)
+                return DEL_US;
+        else if (buf.compare(API[12])==0)
+                return DEL_MES;
+        else if (buf.compare(API[13])==0)
+                return SH_UNR;
+        else if (buf.compare(API[14])==0)
+                return SH_ALL;
+        else if (buf.compare(API[15])==0)
+                return SH_EX;
+        else if (buf.compare(API[16])==0)
+                return RSND;
+        else if (buf.compare(API[17])==0)
                 return INSYS;
         /*for (int i = 0; i < API_SIZE; i++)
             if (buf.compare(API[i]) == 0)

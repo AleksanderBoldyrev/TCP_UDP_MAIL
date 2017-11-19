@@ -43,7 +43,7 @@ private:
     string LoginNewUser(const string &uname, const string &passw,  bool &res);
     string RegisterNewUser(const string &uname, const string &passw,  bool &res);
     string DeleteUser(const string& username);
-    unsigned long AddMessage(Message* message, const string& username, const string& from);
+    unsigned long AddMessage(Message* message, const string& username, const string& from, string& err);
     string ShowUnreadMes(const string& username, string& buf);
     string ShowAllMes(const string& username, string& buf);
     string ShowExactMes(const string& username, string& buf, const string& mesNumber);

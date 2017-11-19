@@ -91,7 +91,8 @@ public:
         ss << body << DELIM_SERIALIZE;
         return ss.str();
     };
-    bool deserialize(const string& input)
+   
+bool deserialize(const string& input)
     {
         bool res = true;
         int numarg = 0;
@@ -103,27 +104,19 @@ public:
 		// find all delimeters
 		for (int i = 0; i < input.size(); i++)
 		{
-			if (input[i] == DELIM_PARSE)
+			if (input[i] == DELIM_SERIALIZE)
 				numarg++;
 		}
 		// find all parts
 		if (numarg > 0)
 		{
-			args = new string[numarg-1];
-			string opcodeBuf;
+			args = new string[numarg];
 			unsigned short cc = 0;
 			for (int i = 0; i < input.size(); i++)
 			{
-				if (input[i] == DELIM_PARSE)
+				if (input[i] == DELIM_SERIALIZE)
 				{
-					if (cc == 0)
-					{
-						opcodeBuf = buf.str();
-					}
-					else if (cc > 1)
-					{
-						args[cc - 2] = buf.str();
-					}
+					args[cc] = buf.str();
 					cc++;
 					buf.str(std::string());
 				}
