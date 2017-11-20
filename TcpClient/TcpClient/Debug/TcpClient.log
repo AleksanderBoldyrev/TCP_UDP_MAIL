@@ -1,8 +1,8 @@
 ﻿  ClientWorker.cpp
 i:\nets\tcp_udp_mail\tcpclient\tcpclient\api.h(112): warning C4018: '<': signed/unsigned mismatch
 i:\nets\tcp_udp_mail\tcpclient\tcpclient\api.h(122): warning C4018: '<': signed/unsigned mismatch
-i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(741): warning C4018: '<': signed/unsigned mismatch
-i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(752): warning C4018: '<': signed/unsigned mismatch
-i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(814): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(742): warning C4018: '<': signed/unsigned mismatch
+i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(753): warning C4018: '<': signed/unsigned mismatch
+i:\nets\tcp_udp_mail\tcpclient\tcpclient\clientworker.cpp(815): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(2238): note: see declaration of 'gethostbyname'
   TcpClient.vcxproj -> I:\Nets\TCP_UDP_MAIL\TcpClient\Debug\TcpClient.exe

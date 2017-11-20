@@ -42,6 +42,7 @@ bool ServerWorker::mainLoop() {
     string ff;
     unsigned long size;
     int cc = 0;
+    int n = 0;
     
     unsigned int unread = 0;
     
@@ -63,6 +64,10 @@ bool ServerWorker::mainLoop() {
                     break;
                 case EXIT: 
                     printf("Client with ID: %d is disconnect!\n", socket);
+                    args2 = new string[1];
+                    args2[0] = API[SERV_OK];
+                    sendTo(serialize(ANSWER, 1, args2));
+                    delete[] args2;
                     closeSocket();
                     return true;
                     break;

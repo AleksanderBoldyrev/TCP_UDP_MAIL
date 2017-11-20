@@ -193,6 +193,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			sendTo(socket, serialize(STATE::EXIT, 0, nullptr));
 			ListenRecv(socket, buf);
 			answerCode = parse(buf, numArgCount, args);
+			return;
 			break;
 		case STATE::REG:
 			dr = false;
@@ -827,12 +828,12 @@ void ClientWorker::run(string host, unsigned short port)
 				else
 				{
 					ListenLoop(sockfd);
-					n = shutdown(sockfd, SD_BOTH);
-					if (n == SOCKET_ERROR) {
-						printf("shutdown failed: %d\n", WSAGetLastError());
-						closesocket(sockfd);
-						WSACleanup();
-					}
+					//n = shutdown(sockfd, SD_BOTH);
+					//if (n == SOCKET_ERROR) {
+						//printf("shutdown failed: %d\n", WSAGetLastError());
+						//closesocket(sockfd);
+						//WSACleanup();
+					//}
 				}
 				closesocket(sockfd);
 				WSACleanup();
