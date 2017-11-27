@@ -54,6 +54,7 @@ void* ClientWorker::runner(void* args)
 void ClientWorker::startThread(string* params)
 {
         pthread_create(&tHandle, 0, runner, (void *) params);
+        pthread_join(tHandle, NULL);
 }
 
 void ClientWorker::stopThread()
@@ -879,7 +880,7 @@ void ClientWorker::sendTo(int socket, const string& message)
 	}
 	s += message;
 	res = sendto(socket, s.c_str(), s.size(), 0 , (struct sockaddr *) &servOut, sizeof(servOut));
-	//printf("String to send: %s", s.c_str());
+	printf("String to send: %s", s.c_str());
 	if (res != s.size())
 		printf("Send failed: %i != %i!\n", res, (int)s.length());
 }
@@ -897,7 +898,7 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr)
 		char* recvbuf = new char[size];
 
 		int res = recvfrom(socket, recvbuf, size, 0, (struct sockaddr *) &servIn, &servIn_size);
-		//printf("String received: %s\n", recvbuf);
+		printf("String received: %s\n", recvbuf);
 
 		//printf("Received %d symbols!\n", res);
 		if (res > 0)

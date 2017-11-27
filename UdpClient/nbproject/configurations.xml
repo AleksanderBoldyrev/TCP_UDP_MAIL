@@ -44,6 +44,7 @@
         <linkerTool>
           <linkerCopySharedLibs>true</linkerCopySharedLibs>
           <commandlineTool>g++</commandlineTool>
+          <commandLine>-pthread</commandLine>
         </linkerTool>
       </compileType>
       <item path="API.h" ex="false" tool="3" flavor2="0">
