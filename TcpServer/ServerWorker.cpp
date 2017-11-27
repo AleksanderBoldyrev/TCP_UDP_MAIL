@@ -68,8 +68,8 @@ bool ServerWorker::mainLoop() {
                     args2[0] = API[SERV_OK];
                     sendTo(serialize(ANSWER, 1, args2));
                     delete[] args2;
-                    closeSocket();
-                    return true;
+                    //closeSocket();
+                    //return true;
                     break;
                 case REG: 
                     if (args != NULL && numarg > 1) 
@@ -451,12 +451,23 @@ bool ServerWorker::mainLoop() {
 }
 
 void ServerWorker::openSem(const string& name)
-{
+{   
+    sem_t *sem = sem_open (name.c_str(), O_CREAT | O_EXCL, 0644, 1);
     //sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
+    if (sem!=NULL)
+        sem_wait (sem); 
+    //int fd_lock = open(LOCK_FILE, O_CREAT);
+    //flock(fd_lock, LOCK_EX);
+    // do stuff
+    //flock(fd_lock, LOCK_UN);
 }
 
 void ServerWorker::closeSem(const string& name)
 {
+    sem_t *sem = sem_open (name.c_str(), O_EXCL, 0644, 1);
+    //sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
+    if (sem!=NULL)
+        sem_post(sem); 
     //sem_post(sem_open(name.c_str(), O_CREAT, 0644, 1));
 }
 
@@ -623,6 +634,7 @@ unsigned long ServerWorker::AddMessage(Message* message, const string& username,
 
 void ServerWorker::WriteToFile(const string& username, Message* message)
 {
+    openSem(username);
     ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
         if (out.good() && message != NULL) {
             out << MES_ID << message->id << endl;
@@ -634,6 +646,7 @@ void ServerWorker::WriteToFile(const string& username, Message* message)
             
         }
         out.close();
+    closeSem(username);
 }
 
 bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)

@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <sys/file.h>
 //#include <sys/types.h>
 
 #include "CTcpServer.h"

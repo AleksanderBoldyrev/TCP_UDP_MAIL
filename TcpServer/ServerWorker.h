@@ -67,6 +67,8 @@ private:
     
     bool ListenRecv(std::string& MsgStr);
     void closeSocket();
+    
+    
 };
 
 
