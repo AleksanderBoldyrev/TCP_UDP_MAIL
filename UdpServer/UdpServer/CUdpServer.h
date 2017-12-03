@@ -11,6 +11,8 @@ typedef int             ClientID;
 
 #define PRINT_DEADLOCK
 
+#define TIMEOUT_MS      100     /* Seconds between retransmits */
+
 using namespace std;
 
 class CUdpServer;
@@ -102,8 +104,9 @@ private:
 	//SOCKET AcceptSock;
 	HANDLE Mut;
 	HANDLE serverThread;
-	void LockMutex(HANDLE& m);
-	void UnlockMutex(HANDLE& m);
+	static bool LockMutex(HANDLE& m);
+	static void UnlockMutex(HANDLE& m);
+	static bool LockMutex(const wstring& name, HANDLE& m);
 	unsigned int clientsSize = 0;
 	static DWORD WINAPI AcceptThread(LPVOID pParam);
 	static DWORD WINAPI ListenThread(LPVOID pParam);

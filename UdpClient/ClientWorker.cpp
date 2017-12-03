@@ -887,30 +887,71 @@ void ClientWorker::sendTo(int socket, const string& message)
 
 bool ClientWorker::ListenRecv(int socket, std::string& MsgStr)
 {
-	char* c = new char[10];
+	/*char* c = new char[10];
 	unsigned int size = 0;
-	int ssize = recvfrom(socket, c, 10, 0, (struct sockaddr *) &servIn, &servIn_size);
+        int ssize = 0;
+        stringstream buf;
+	while (ssize < 10) 
+        {
+            ssize += recvfrom(socket, c, 10, 0, (struct sockaddr *) &servIn, &servIn_size);
+            buf << c;
+            usleep(1000000);
+        }
 	//printf("Size buffer: %s\n", c);
 	if (ssize == 10)
 	{
-		size = atoi(c);
-		//char* recvbuf = (char*)malloc((size)*sizeof(char));
+		size = atoi(buf.str().c_str());
+                buf.clear();
 		char* recvbuf = new char[size];
 
-		int res = recvfrom(socket, recvbuf, size, 0, (struct sockaddr *) &servIn, &servIn_size);
-		printf("String received: %s\n", recvbuf);
+		int res = 0;
+                while (res < size) 
+                {
+                    res += recvfrom(socket, recvbuf, size, 0, (struct sockaddr *) &servIn, &servIn_size);
+                    buf << recvbuf;
+                    usleep(1000000);
+                }
+                string s = buf.str();
+		printf("String received: %s\n", s.c_str());
 
 		//printf("Received %d symbols!\n", res);
 		if (res > 0)
 		{
 			MsgStr.clear();
-			for (int i = 0; i < res; i++)
-				if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
-					MsgStr.push_back(recvbuf[i]);
+                        remove(s.begin(), s.end(), '\t');
+                        remove(s.begin(), s.end(), '\r');
+                        remove(s.begin(), s.end(), '\0');
+                        remove(s.begin(), s.end(), '\n');
+                        MsgStr = s;
 		}
 	}
 	else
-		return false;
+		return false;*/
+    char buffer[4096];
+        size_t len = 10;
+        size_t res = 0;
+        stringstream buf;
+        MsgStr.clear();
+		while (MsgStr.length() < len)
+		{
+			
+				res = recvfrom(socket, buffer, 4096, 0, (struct sockaddr *) &servIn, &servIn_size);
+                                buf << buffer;
+                                string s = buf.str();
+                               //s.erase(std::remove(s.begin(), s.end(), '\t'), s.end());
+		s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
+		//s.erase(std::remove(s.begin(), s.end(), '\n'), s.end());
+		s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
+                        MsgStr+=s;
+				// parse len
+				if (MsgStr.length() >= len)
+				{
+					string c = MsgStr.substr(0, len);
+					MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
+					len = atoi(c.c_str());
+				}
+			
+		}
 	cout << "Recieved: " << MsgStr << endl;
 	return true;
 }

@@ -32,7 +32,7 @@ DWORD WINAPI CUdpServer::ListenThread(LPVOID pParam) {
 	}
 	else
 	{
-		cout << "Received null data sructure!" << endl;
+		cout << "Received null data structure!" << endl;
 		return -1;
 	}
 	//pthread_exit(0);
@@ -71,6 +71,9 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 		service.sin_port = htons(port);
 
 		int res;
+		static int timeout = TIMEOUT_MS;
+		setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+
 		res = bind(s, (sockaddr *)& service, sizeof(service));
 		if (res != 0)
 		{
@@ -94,7 +97,7 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 				processInput(str);
 				processOutput(s, str);
 			}*/
-			Sleep(100);
+			Sleep(10);
 		}
 		closesocket(s);
 		//if (listen((*pData.pAcceptSock), SOMAXCONN) == -1) {
@@ -109,18 +112,48 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 //If client has current IP, then returns client ID, else it creates a new thread, puts new client into DB and returns new ID. 
 unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize)
 {
-	if (clients != nullptr)
+	//if (clients == nullptr)
+	///{
+	//	clients = new ThreadData()
+	//}
+	//if (clients != nullptr)
+	//{
+	
+	if (cSize > 0)
 	{
-		if (cSize > 0)
+		for (int i = 0; i < cSize; i++)
 		{
-			for (int i = 0; i < cSize; i++)
-			{
-				if (saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr && saddr.sin_family == clients[i].address.sin_family && saddr.sin_port == clients[i].address.sin_port && saddr.sin_zero == clients[i].address.sin_zero)
-				{
-					return i; // we found our client
-				}
+			//if (saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr && saddr.sin_family == clients[i].address.sin_family && saddr.sin_port == clients[i].address.sin_port && saddr.sin_zero == clients[i].address.sin_zero)
+			DWORD result = WaitForSingleObject(clients[i].tHandle, 10);
+
+			if (result == WAIT_OBJECT_0) {
+				// the thread handle is signaled - the thread has terminated
+				int ind = 0;
+				cSize--;
+				ThreadData * arr = new ThreadData[cSize];
+				if (cSize > 1)
+					for (unsigned int j = 0; j < cSize + 1; j++)
+					{
+						if (j != i)
+						{
+							ind++;
+							arr[ind] = clients[j];
+						}
+					}
+				delete[] clients;
+				clients = arr;
 			}
 		}
+
+		for (int i = 0; i < cSize; i++)
+		{
+			//if (saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr && saddr.sin_family == clients[i].address.sin_family && saddr.sin_port == clients[i].address.sin_port && saddr.sin_zero == clients[i].address.sin_zero)
+			if ((saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr) && (saddr.sin_port == clients[i].address.sin_port))
+			{
+				return i; // we found our client
+			}
+		}
+
 		// let's create a new client thread
 		cSize++;
 		ThreadData * arr = new ThreadData[cSize];
@@ -128,71 +161,102 @@ unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clie
 			for (unsigned int i = 0; i < cSize - 1; i++)
 				arr[i] = clients[i];
 		delete[] clients;
-
-		wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
-
 		clients = arr;
-
-		clients[cSize - 1].address = saddr;
-
-		clients[cSize - 1].rBuf = new string();
-
-		clients[cSize - 1].rMutexName = converter.from_bytes(inet_ntoa(saddr.sin_addr));
-		clients[cSize - 1].rMutexName += L"_";
-		clients[cSize - 1].rMutexName += converter.from_bytes(itoa(saddr.sin_port, nullptr, 10));
-		clients[cSize - 1].rMutexName += L"_read";
-
-		clients[cSize - 1].sBuf = new string();
-
-		clients[cSize - 1].sMutexName = converter.from_bytes(inet_ntoa(saddr.sin_addr));
-		clients[cSize - 1].sMutexName += L"_";
-		clients[cSize - 1].sMutexName += converter.from_bytes(itoa(saddr.sin_port, nullptr, 10));
-		clients[cSize - 1].sMutexName += L"_write";
-
-		// lock read mutex
-		HANDLE m = CreateMutex(NULL, FALSE, clients[cSize - 1].rMutexName.c_str());
-		DWORD result;
-		result = WaitForSingleObject(m, INFINITE);
-		if (result != WAIT_OBJECT_0)
-		{
-			cout << "Failed to lock mutex!" << endl;
-			cSize--;
-			return 0;
-		}
-
-		DWORD t;
-		clients[cSize - 1].tHandle = CreateThread(0, 0, ListenThread, (void*)&clients[cSize - 1], 0, &t);
-		clients[cSize - 1].tId = t;
-
-		return cSize;
 	}
-	return 0;
+	else
+	{
+		cSize++;
+		clients = new ThreadData[cSize];
+	}
+
+	wstring_convert<codecvt_utf8_utf16<wchar_t>> converter;
+
+	clients[cSize - 1].address = saddr;
+
+	clients[cSize - 1].rBuf = new string();
+
+	stringstream ss;
+	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_read";
+	clients[cSize - 1].rMutexName = converter.from_bytes(ss.str().c_str());
+	ss.clear();
+	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_write";
+	clients[cSize - 1].sMutexName = converter.from_bytes(ss.str().c_str());
+
+	clients[cSize - 1].sBuf = new string();
+	clients[cSize - 1].rBuf = new string();
+
+	// lock read mutex
+	/*HANDLE m = CreateMutex(NULL, FALSE, clients[cSize - 1].rMutexName.c_str());
+	DWORD result;
+	result = WaitForSingleObject(m, INFINITE);
+	if (result != WAIT_OBJECT_0)
+	{
+		cout << "Failed to lock mutex!" << endl;
+		cSize--;
+		return 0;
+	}*/
+
+	DWORD t;
+	clients[cSize - 1].tHandle = CreateThread(0, 0, ListenThread, (void*)&clients[cSize - 1], 0, &t);
+	clients[cSize - 1].tId = t;
+
+	return cSize-1;
+	//}
+	//return 0;
 }
 
 void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize)
 {
-	struct sockaddr_in from;
+	sockaddr_in from;
 	int fromlen = sizeof(from);
-	char buffer[1024];
+	char buffer[4096];
+	string buff2;
 	ZeroMemory(buffer, sizeof(buffer));
+	//WSAEnumNetworkEvents();
 	if (recvfrom(s, buffer, sizeof(buffer), 0, (sockaddr*)&from, &fromlen) != SOCKET_ERROR)
 	{
-		unsigned int pos = checkClient(from, clients, cSize);
-		HANDLE m = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
+		HANDLE mutex;// = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
 		// write data into read buffer of clients[pos]
-		if (clients[pos].rBuf != nullptr) 
-			clients[pos].rBuf->append(buffer);
-		// unlock read mutex of clients[pos]
-		CloseHandle(m);
-		// wait for 50 ms
-		Sleep(50);
-		// lock read mutex of clients[pos]
-		m = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
-		DWORD result;
-		result = WaitForSingleObject(m, INFINITE);
-		if (result != WAIT_OBJECT_0)
+		buff2 += buffer;
+		if (buff2.length() > 0)
 		{
-			cout << "Failed to lock mutex!" << endl;
+
+			//buff2.erase(std::remove(buff2.begin(), buff2.end(), '\t'), buff2.end());
+			buff2.erase(std::remove(buff2.begin(), buff2.end(), '\r'), buff2.end());
+			//buff2.erase(std::remove(buff2.begin(), buff2.end(), '\n'), buff2.end());
+			buff2.erase(std::remove(buff2.begin(), buff2.end(), '\0'), buff2.end());
+			//remove(buff2.begin(), buff2.end(), '\t');
+			//remove(buff2.begin(), buff2.end(), '\r');
+			//remove(buff2.begin(), buff2.end(), '\0');
+			//remove(buff2.begin(), buff2.end(), '\n');
+			cout << "Recieved: " << buff2 << endl;
+
+			unsigned int pos = checkClient(from, clients, cSize);
+			// lock mutex for client
+			bool act = false;
+			while (!act)
+			{
+				if (LockMutex(clients[pos].rMutexName, mutex))
+				{
+					// read data
+					if (clients[pos].rBuf != nullptr)
+						clients[pos].rBuf->append(buff2);
+					clients[pos].address = from;
+					act = true;
+					// unlock read mutex of clients[pos]
+				}
+				UnlockMutex(mutex);
+				// wait for 50 ms
+				//Sleep(50);
+				// lock read mutex of clients[pos]
+				/*m = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
+				DWORD result;
+				result = WaitForSingleObject(m, INFINITE);
+				if (result != WAIT_OBJECT_0)
+				{
+					cout << "Failed to lock mutex!" << endl;
+				}*/
+			}
 		}
 	}
 }
@@ -202,27 +266,73 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 	//sendto(s, str.c_str(), str.length(), 0, (sockaddr*)&from, fromlen);
 	if (cSize > 0 && clients != nullptr)
 	{
+		// fill send flags for each client
+		bool* flags = new bool[cSize];
+		int flagsSize = cSize;
+		for (int i = 0; i < cSize; i++)
+			flags[i] = false;
+
 		for (int i = 0; i < cSize; i++)
 		{
 			//Lock write mutex for each client; 
+			/*HANDLE m = CreateMutex(NULL, FALSE, clients[i].rMutexName.c_str());
+			DWORD result;
+			result = WaitForSingleObject(m, INFINITE);*/
+			HANDLE m;
+			bool act = false;
+			int count = 0;
+			while (!act && count<16)
+			{
+				count++;
+				if (!LockMutex(clients[i].sMutexName, m))
+				{
+					cout << "Failed to lock mutex!" << endl;
+					UnlockMutex(m);
+				}
+				else
+				{
+					//read data from sBuf;
+					if (clients[i].sBuf != nullptr)
+					{
+						string ss = *clients[i].sBuf;
+						if (ss.size() > 0)
+						{
+							//clean sBuf;
+							clients[i].sBuf->clear();
+							// send data
+							//struct sockaddr_in to;
+							int tolen = sizeof(clients[i].address);
+							//char buffer[1024];
+							//ZeroMemory(buffer, sizeof(buffer));
+							cout << "Send to client: " << clients[i].tId << " - " << ss << endl;
+							int count = sendto(s, ss.c_str(), ss.length(), 0, (sockaddr*)&clients[i].address, tolen);
+							if (count != ss.length())
+								cout << "Send data mismatch: send " << count << ", have " << ss.length() << endl;
+							act = true;
+						}
+					}
+					else
+						cout << "Send buffer is nullptr for client #" << i << endl;
 
-			//read data from sBuf;
-			
-			//clean sBuf;
-
-			//unlock mutex;
-
+					//unlock mutex;
+					UnlockMutex(m);
+				}
+			}
 		}
 	}
 }
 
-void CUdpServer::LockMutex(HANDLE& m)
+bool CUdpServer::LockMutex(HANDLE& m)
 {
 	m = CreateMutex(NULL, FALSE, L"UdpServer");
 	DWORD result;
-	result = WaitForSingleObject(m, INFINITE);
+	result = WaitForSingleObject(m, 100);
 	if (result != WAIT_OBJECT_0)
+	{
 		cout << "Failed to lock mutex!" << endl;
+		return false;
+	}
+	return true;
 }
 
 void CUdpServer::UnlockMutex(HANDLE& m)
@@ -230,24 +340,29 @@ void CUdpServer::UnlockMutex(HANDLE& m)
 	CloseHandle(m);
 }
 
+bool CUdpServer::LockMutex(const wstring& name, HANDLE& m)
+{
+	m = CreateMutex(NULL, FALSE, name.c_str());
+	DWORD result;
+	result = WaitForSingleObject(m, 100);
+	if (result != WAIT_OBJECT_0)
+	{
+		cout << "Failed to lock mutex!" << endl;
+		return false;
+	}
+	return true;
+}
+
 void CUdpServer::StartAccept(USHORT port)
 {
-	LockMutex(Mut);
-
-	//AcceptThInfo.ThPort = Port;
-	//AcceptThInfo.bCreated = true;
-
-	//AcceptThInput* ThInput = new AcceptThInput;
-	/*ThInput->ThPort = Port;
-	ThInput->pAcceptSock = &AcceptSock;
-	ThInput->pParent = this;
-
-	//pthread_create(&AcceptThInfo.ThHandle, 0, AcceptThread, (void *)ThInput);*/
-	DWORD t;
-	USHORT* pp = new USHORT;
-	*pp = port;
-	serverThread = CreateThread(0, 0, AcceptThread, (void *)pp, 0, &t);
-	UnlockMutex(Mut);
+	if (LockMutex(Mut))
+	{
+		DWORD t;
+		USHORT* pp = new USHORT;
+		*pp = port;
+		serverThread = CreateThread(0, 0, AcceptThread, (void *)pp, 0, &t);
+		UnlockMutex(Mut);
+	}
 }
 
 //void CUdpServer::StartListenTh(SOCKET Sock)

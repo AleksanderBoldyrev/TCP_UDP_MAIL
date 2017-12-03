@@ -69,7 +69,9 @@ private:
 	bool ListenRecv(std::string& MsgStr);
 	void closeSocket();
 
-
+	static bool LockMutex(HANDLE& m);
+	static void UnlockMutex(HANDLE& m);
+	static bool LockMutex(const wstring& name, HANDLE& m);
 };
 
 

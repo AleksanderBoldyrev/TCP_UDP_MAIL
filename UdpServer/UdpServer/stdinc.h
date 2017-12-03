@@ -43,5 +43,12 @@ public:
 	sockaddr_in address;
 	HANDLE tHandle;
 	DWORD tId;
+	~ThreadData()
+	{
+		if (rBuf != nullptr)
+			delete rBuf;
+		if (sBuf != nullptr)
+			delete sBuf;
+	}
 };
 

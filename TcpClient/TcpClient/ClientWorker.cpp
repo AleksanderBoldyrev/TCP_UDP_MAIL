@@ -883,7 +883,7 @@ bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 		{
 			MsgStr.clear();
 			for (int i = 0; i < res; i++)
-				if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
+                                if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
 					MsgStr.push_back(recvbuf[i]);
 		}
 	}

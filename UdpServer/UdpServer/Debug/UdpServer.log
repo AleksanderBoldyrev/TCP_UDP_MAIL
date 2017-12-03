@@ -1,40 +1,16 @@
-﻿  main.cpp
-i:\ос\os_5th\udpserver\udpserver\api.h(106): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\api.h(116): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\main.cpp(13): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1270): note: see declaration of 'scanf'
-  ServerWorker.cpp
-i:\ос\os_5th\udpserver\udpserver\api.h(106): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\api.h(116): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(303): warning C4244: 'argument': conversion from 'unsigned long' to 'unsigned short', possible loss of data
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(66): warning C4477: 'printf' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'SOCKET (__stdcall *)(int,int,int)'
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(33): warning C4101: 'isSent': unreferenced local variable
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(32): warning C4101: 'isNameValid': unreferenced local variable
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(597): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(505): note: see declaration of 'localtime'
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(599): warning C4996: 'asctime': This function or variable may be unsafe. Consider using asctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(116): note: see declaration of 'asctime'
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(627): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(505): note: see declaration of 'localtime'
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(628): warning C4996: 'asctime': This function or variable may be unsafe. Consider using asctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(116): note: see declaration of 'asctime'
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(1152): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\serverworker.cpp(1163): warning C4018: '<': signed/unsigned mismatch
-  CUdpServer.cpp
+﻿  CUdpServer.cpp
 i:\ос\os_5th\udpserver\udpserver\api.h(106): warning C4018: '<': signed/unsigned mismatch
 i:\ос\os_5th\udpserver\udpserver\api.h(116): warning C4018: '<': signed/unsigned mismatch
 i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(29): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(1868): note: see declaration of 'inet_ntoa'
 i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(31): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(1868): note: see declaration of 'inet_ntoa'
-i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(116): warning C4018: '<': signed/unsigned mismatch
-i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(140): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(124): warning C4018: '<': signed/unsigned mismatch
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(148): warning C4018: '<': signed/unsigned mismatch
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(179): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(1868): note: see declaration of 'inet_ntoa'
-i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(142): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _itoa. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdlib.h(1316): note: see declaration of 'itoa'
-i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(147): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(182): warning C4996: 'inet_ntoa': Use inet_ntop() or InetNtop() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
   c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(1868): note: see declaration of 'inet_ntoa'
-i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(149): warning C4996: 'itoa': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _itoa. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdlib.h(1316): note: see declaration of 'itoa'
-  Generating Code...
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(272): warning C4018: '<': signed/unsigned mismatch
+i:\ос\os_5th\udpserver\udpserver\cudpserver.cpp(275): warning C4018: '<': signed/unsigned mismatch
   UdpServer.vcxproj -> I:\ОС\os_5th\UdpServer\Debug\UdpServer.exe

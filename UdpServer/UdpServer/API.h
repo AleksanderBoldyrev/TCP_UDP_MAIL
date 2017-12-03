@@ -97,7 +97,7 @@ public:
 	{
 		bool res = true;
 		int numarg = 0;
-		string* args = NULL;
+		string* args = nullptr;
 		if (input.size() > 0)
 		{
 			stringstream buf;
@@ -139,6 +139,8 @@ public:
 		}
 		else
 			res = false;
+		if (args != nullptr)
+			delete[] args;
 		return res;
 	};
 };

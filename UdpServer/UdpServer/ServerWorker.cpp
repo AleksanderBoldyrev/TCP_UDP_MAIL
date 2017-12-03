@@ -63,13 +63,13 @@ bool ServerWorker::mainLoop() {
 				delete[] args2;
 				break;
 			case EXIT:
-				printf("Client with ID: %d is disconnect!\n", socket);
-				args2 = new string[1];
-				args2[0] = API[SERV_OK];
-				sendTo(serialize(ANSWER, 1, args2));
-				delete[] args2;
+				//printf("Client with ID: %d is disconnected!\n", socket);
+				//args2 = new string[1];
+				//args2[0] = API[SERV_OK];
+				//sendTo(serialize(ANSWER, 1, args2));
+				//delete[] args2;
 				//closeSocket();
-				//return true;
+				return true;
 				break;
 			case REG:
 				if (args != NULL && numarg > 1)
@@ -261,7 +261,7 @@ bool ServerWorker::mainLoop() {
 							delete[] args2;
 						}
 						else
-							return "No messages found!\n";
+							cout << "No messages found!\n";
 					}
 					if (unread == 0)
 					{
@@ -312,7 +312,7 @@ bool ServerWorker::mainLoop() {
 							delete[] args2;
 						}
 						else
-							return "No messages found!\n";
+							cout << "No messages found!\n";
 					}
 					if (size == 0)
 					{
@@ -369,7 +369,7 @@ bool ServerWorker::mainLoop() {
 							delete[] args2;
 						}
 						else
-							return "No messages found!\n";
+							cout << "No messages found!\n";
 					}
 					if (!mesFound)
 					{
@@ -429,7 +429,7 @@ bool ServerWorker::mainLoop() {
 							delete[] args2;
 						}
 						else
-							return "No messages found!\n";
+							cout << "No messages found!\n";
 					}
 					if (!mesFound && size == 0)
 					{
@@ -1053,20 +1053,34 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 {
 	if (td != nullptr)
 	{
-		HANDLE m = CreateMutex(NULL, FALSE, td->rMutexName.c_str());
+		/*HANDLE m = CreateMutex(NULL, FALSE, td->rMutexName.c_str());
 		DWORD result;
 		result = WaitForSingleObject(m, INFINITE);
 		if (result != WAIT_OBJECT_0)
 		{
 			cout << "Failed to lock mutex!" << endl;
 			return false;
-		}
-		if (td->rBuf != nullptr)
+		}*/
+		MsgStr.clear();
+		size_t len = 10;
+		while (MsgStr.length() < len)
 		{
-			MsgStr = *td->rBuf;
-			td->rBuf->clear();
+			HANDLE m;
+			if (LockMutex(td->rMutexName, m) && td->rBuf != nullptr)
+			{
+				MsgStr += *td->rBuf;
+				td->rBuf->clear();
+				// parse len
+				if (MsgStr.length() >= len)
+				{
+					string c = MsgStr.substr(0, len);
+					MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
+					len = atoi(c.c_str());
+				}
+			}
+			UnlockMutex(m);
+			Sleep(100);
 		}
-		CloseHandle(m);
 		return true;
 		/*char c[10];
 		unsigned int size = 0;
@@ -1093,7 +1107,7 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 }
 
 void ServerWorker::sendTo(const string& message) {
-	/*int res = 0;
+	//int res = 0;
 	int size = message.size();
 	stringstream ss;
 	ss << size;
@@ -1104,25 +1118,32 @@ void ServerWorker::sendTo(const string& message) {
 		s.insert(s.begin(), '0');
 	}
 	s += message;
-	printf("String to send: %s\n", s.c_str());
-	res = send(socket, s.c_str(), s.size(), 0);
-	if (res != s.size())
-		printf("Send failed: %d != %d!\n", s.c_str(), s.size());*/
+	//printf("String to send: %s\n", s.c_str());
+	///res = send(socket, s.c_str(), s.size(), 0);
+	//if (res != s.size())
+		//printf("Send failed: %d != %d!\n", s.c_str(), s.size());*/
 	if (td != nullptr)
 	{
-		HANDLE m = CreateMutex(NULL, FALSE, td->sMutexName.c_str());
+		/*HANDLE m = CreateMutex(NULL, FALSE, td->sMutexName.c_str());
 		DWORD result;
-		result = WaitForSingleObject(m, INFINITE);
-		if (result != WAIT_OBJECT_0)
+		result = WaitForSingleObject(m, INFINITE);*
+		if (result != WAIT_OBJECT_0
 		{
 			cout << "Failed to lock mutex!" << endl;
 			
-		}
-		else if (td->sBuf != nullptr)
+		}else*/
+		HANDLE m;
+		bool act = false;
+		while (!act)
 		{
-			*td->sBuf = message;
+			if (LockMutex(td->sMutexName, m) && td->sBuf != nullptr)
+			{
+				//*td->sBuf = message;
+				*td->sBuf = s;
+				act = true;
+			}
+			UnlockMutex(m);
 		}
-		CloseHandle(m);
 	}
 }
 
@@ -1243,3 +1264,33 @@ void ServerWorker::closeSocket()
 	// TODO:
 }
 
+bool ServerWorker::LockMutex(HANDLE& m)
+{
+	m = CreateMutex(NULL, FALSE, L"UdpServer");
+	DWORD result;
+	result = WaitForSingleObject(m, 100);
+	if (result != WAIT_OBJECT_0)
+	{
+		cout << "Failed to lock mutex!" << endl;
+		return false;
+	}
+	return true;
+}
+
+void ServerWorker::UnlockMutex(HANDLE& m)
+{
+	CloseHandle(m);
+}
+
+bool ServerWorker::LockMutex(const wstring& name, HANDLE& m)
+{
+	m = CreateMutex(NULL, FALSE, name.c_str());
+	DWORD result;
+	result = WaitForSingleObject(m, 100);
+	if (result != WAIT_OBJECT_0)
+	{
+		cout << "Failed to lock mutex!" << endl;
+		return false;
+	}
+	return true;
+}
