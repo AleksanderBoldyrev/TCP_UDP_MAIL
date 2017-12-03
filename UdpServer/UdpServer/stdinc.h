@@ -15,9 +15,9 @@
 //#include <cstdlib>
 #include <stdio.h>
 #include <math.h>
-#include <vector>
-#include <list>
-#include <map>
+//#include <vector>
+//#include <list>
+//#include <map>
 #include <signal.h>
 #include <assert.h>
 #include <sstream> 
@@ -43,6 +43,12 @@ public:
 	sockaddr_in address;
 	HANDLE tHandle;
 	DWORD tId;
+
+	unsigned long lastPacketNumSend = 0;
+	unsigned long lastPacketNumRecv = 0;
+	std::string tempRBuf = nullptr;
+	unsigned long mesRLen = 0;
+
 	~ThreadData()
 	{
 		if (rBuf != nullptr)

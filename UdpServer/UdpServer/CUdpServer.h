@@ -12,6 +12,8 @@ typedef int             ClientID;
 #define PRINT_DEADLOCK
 
 #define TIMEOUT_MS      100     /* Seconds between retransmits */
+#define UDP_DG_LEN      512     // UNICODE symbol count in one packet.
+#define TECH_DG_SIZE    10      // Char count, in which the length of the packet and it's number are secured.
 
 using namespace std;
 

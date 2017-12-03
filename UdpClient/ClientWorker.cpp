@@ -771,9 +771,7 @@ unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, st
 						args[cc - 2] = buf.str();
 					}
 					cc++;
-					//buf.clear();
 					buf.str(std::string());
-					//buf.str("");
 				}
 				else
 				{
@@ -797,74 +795,6 @@ int ClientWorker::parseOpCode(const string& buf)
 	return NO_OPERATION;
 }
 
-/*void ClientWorker::run(string host, unsigned short port)
-{
-    printf("Starting new client thread with HOST=%s, PORT=%i\n", host.c_str(), port);
-    int n;
-
-    int sockfd;
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-    
-    //string name;
-    //name = "192.168.0.200";
-
-    //string buffer;
-
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if (sockfd < 0) {
-        perror("ERROR opening socket");
-        exit(1);
-    }
-
-    server = gethostbyname(host.c_str());//argv[1]);
-
-    if (server == NULL) {
-        fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
-    }
-
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, (size_t) server->h_length);
-    serv_addr.sin_port = htons(port);
-
-    
-    ListenLoop(sockfd);
-    
-    close(sockfd);
-
-    //printf("Please enter the message: ");
-    //bzero(buffer, 256);
-    //fgets(buffer, 255, stdin);
-    buffer = "Hi!";
-
-    n = sendto(sockfd, &buffer[0], 256, 0, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-
-    if (n < 0) {
-        perror("ERROR writing to socket");
-        exit(1);
-    } 
-
-    //bzero(buffer, 256);
-	
-    struct sockaddr_in serv2;
-    unsigned int serv2_size = sizeof(serv2);    
-
-
-    n = recvfrom(sockfd, &buffer[0], 255, 0, (struct sockaddr *) &serv2, &serv2_size);
-    if (n < 0) {
-        perror("ERROR reading from socket");
-        exit(1);
-    }
-    printf("%s\n", buffer);
-
-    close(sockfd);
-    
-}*/
-
 void ClientWorker::sendTo(int socket, const string& message)
 {
 	cout << "Send to server: " << message << endl;
@@ -873,12 +803,21 @@ void ClientWorker::sendTo(int socket, const string& message)
 	stringstream ss;
 	ss << size;
 	string s = ss.str();
-	//sprintf(s.c_str(), "%d", size);
 	while (s.size() < 10)
 	{
 		s.insert(s.begin(), '0');
 	}
 	s += message;
+        int num = ++lastPacketNumSend;
+		stringstream ss1;
+		ss1 << num;
+		string s1 = ss1.str();
+		while (s1.size() < 10)
+		{
+		s1.insert(s1.begin(), '0');
+                }
+		s1 += s;
+		s = s1;
 	res = sendto(socket, s.c_str(), s.size(), 0 , (struct sockaddr *) &servOut, sizeof(servOut));
 	printf("String to send: %s", s.c_str());
 	if (res != s.size())
@@ -887,71 +826,44 @@ void ClientWorker::sendTo(int socket, const string& message)
 
 bool ClientWorker::ListenRecv(int socket, std::string& MsgStr)
 {
-	/*char* c = new char[10];
-	unsigned int size = 0;
-        int ssize = 0;
-        stringstream buf;
-	while (ssize < 10) 
-        {
-            ssize += recvfrom(socket, c, 10, 0, (struct sockaddr *) &servIn, &servIn_size);
-            buf << c;
-            usleep(1000000);
-        }
-	//printf("Size buffer: %s\n", c);
-	if (ssize == 10)
-	{
-		size = atoi(buf.str().c_str());
-                buf.clear();
-		char* recvbuf = new char[size];
-
-		int res = 0;
-                while (res < size) 
-                {
-                    res += recvfrom(socket, recvbuf, size, 0, (struct sockaddr *) &servIn, &servIn_size);
-                    buf << recvbuf;
-                    usleep(1000000);
-                }
-                string s = buf.str();
-		printf("String received: %s\n", s.c_str());
-
-		//printf("Received %d symbols!\n", res);
-		if (res > 0)
-		{
-			MsgStr.clear();
-                        remove(s.begin(), s.end(), '\t');
-                        remove(s.begin(), s.end(), '\r');
-                        remove(s.begin(), s.end(), '\0');
-                        remove(s.begin(), s.end(), '\n');
-                        MsgStr = s;
-		}
-	}
-	else
-		return false;*/
-    char buffer[4096];
+	char buffer[4096];
         size_t len = 10;
         size_t res = 0;
         stringstream buf;
         MsgStr.clear();
-		while (MsgStr.length() < len)
-		{
+		/*while (MsgStr.length() < len)
+		{*/
 			
 				res = recvfrom(socket, buffer, 4096, 0, (struct sockaddr *) &servIn, &servIn_size);
                                 buf << buffer;
                                 string s = buf.str();
-                               //s.erase(std::remove(s.begin(), s.end(), '\t'), s.end());
-		s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
-		//s.erase(std::remove(s.begin(), s.end(), '\n'), s.end());
-		s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
-                        MsgStr+=s;
-				// parse len
-				if (MsgStr.length() >= len)
-				{
-					string c = MsgStr.substr(0, len);
-					MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
-					len = atoi(c.c_str());
-				}
-			
-		}
+                                s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
+                                s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
+                                
+                                string str = s;
+                                size_t num = 10;
+                                if (s.length() > num)
+                                {
+                                        string c = str.substr(0, num);
+                                        str = str.substr(num, str.length() - 1);
+                                        num = atoi(c.c_str());
+                                }
+                                if (lastPacketNumRecv + 1 == num)
+                                {
+                                        s = str;
+                                        lastPacketNumRecv = num;
+                                
+                                        MsgStr+=s;
+                                        // parse len
+                                        if (MsgStr.length() >= len)
+                                        {
+                                                string c = MsgStr.substr(0, len);
+                                                MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
+                                                len = atoi(c.c_str());
+                                        }
+                                }
+                                else cout << "Packet order mismatch!\n";
+		//}
 	cout << "Recieved: " << MsgStr << endl;
 	return true;
 }

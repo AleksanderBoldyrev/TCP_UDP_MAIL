@@ -1062,8 +1062,8 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 			return false;
 		}*/
 		MsgStr.clear();
-		size_t len = 10;
-		while (MsgStr.length() < len)
+		//size_t len = 10;
+		while (MsgStr.length() == 0)//< TECH_DG_SIZE)
 		{
 			HANDLE m;
 			if (LockMutex(td->rMutexName, m) && td->rBuf != nullptr)
@@ -1071,12 +1071,12 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 				MsgStr += *td->rBuf;
 				td->rBuf->clear();
 				// parse len
-				if (MsgStr.length() >= len)
+				/*if (MsgStr.length() >= len)
 				{
 					string c = MsgStr.substr(0, len);
 					MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
 					len = atoi(c.c_str());
-				}
+				}*/
 			}
 			UnlockMutex(m);
 			Sleep(100);

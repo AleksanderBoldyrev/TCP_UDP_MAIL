@@ -49,6 +49,8 @@
 
 #define DELIM ':'
 
+#define UDP_DG_LEN      512     // UNICODE symbol count in one packet.
+
 using namespace std;
 
 class ClientWorker
@@ -63,14 +65,12 @@ public:
 	void sendTo(int s, const string& message);
 	bool ListenRecv(int s, std::string& MsgStr);
 	string serialize(unsigned int opcode, unsigned short numarg, const string* ss);
-	//STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* args);
 	unsigned int parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
 private:
 	void run(string host, unsigned short port);
 	int readN(int s, char* buf, int remain, int flags);
 	void ListenLoop(string host, unsigned short port);
-	//STATE ClientWorker::parseOpCode(const string& buf);
 	int parseOpCode(const string& buf);
 	pthread_t tHandle;
         
@@ -79,4 +79,10 @@ private:
         struct sockaddr_in servIn;
         unsigned int servIn_size = sizeof(servIn);
         int sockfd;
+        
+	unsigned long lastPacketNumSend = 0;
+	unsigned long lastPacketNumRecv = 0;
+        
+	string tempRBuf = NULL;
+	unsigned long mesRLen = 0;
 };

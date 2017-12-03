@@ -232,31 +232,60 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 			cout << "Recieved: " << buff2 << endl;
 
 			unsigned int pos = checkClient(from, clients, cSize);
-			// lock mutex for client
-			bool act = false;
-			while (!act)
+			//
+			string str = buff2;
+			size_t num = TECH_DG_SIZE;
+			if (buff2.length() > num)
 			{
-				if (LockMutex(clients[pos].rMutexName, mutex))
-				{
-					// read data
-					if (clients[pos].rBuf != nullptr)
-						clients[pos].rBuf->append(buff2);
-					clients[pos].address = from;
-					act = true;
-					// unlock read mutex of clients[pos]
-				}
-				UnlockMutex(mutex);
-				// wait for 50 ms
-				//Sleep(50);
-				// lock read mutex of clients[pos]
-				/*m = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
-				DWORD result;
-				result = WaitForSingleObject(m, INFINITE);
-				if (result != WAIT_OBJECT_0)
-				{
-					cout << "Failed to lock mutex!" << endl;
-				}*/
+				string c = str.substr(0, num);
+				str = str.substr(num, str.length() - 1);
+				num = atoi(c.c_str());
 			}
+			if (clients[pos].lastPacketNumRecv + 1 == num)
+			{
+				// Пришел ли первый пакет и запоминаем длину
+				if (clients[pos].mesRLen == 0)
+				{
+					if (str.length() >= TECH_DG_SIZE)
+					{
+						string c = str.substr(0, TECH_DG_SIZE);
+						str = str.substr(TECH_DG_SIZE, str.length() - 1);
+						clients[pos].mesRLen = atoi(c.c_str());
+						clients[pos].tempRBuf = str;
+					}
+					else cout << "First packet size is incorrect!\n";
+				}
+				else
+				{
+					clients[pos].tempRBuf += str;	
+				}
+				// Все ли данные прочитали?
+				if (clients[pos].tempRBuf.length() == clients[pos].mesRLen)
+				{
+					clients[pos].lastPacketNumRecv = num;
+					//
+					// lock mutex for client
+					bool act = false;
+					while (!act)
+					{
+						if (LockMutex(clients[pos].rMutexName, mutex))
+						{
+							// read data
+							if (clients[pos].rBuf != nullptr)
+								clients[pos].rBuf->append(clients[pos].tempRBuf);
+							clients[pos].address = from;
+							act = true;
+							clients[pos].tempRBuf = "";
+							clients[pos].mesRLen = 0;
+							// unlock read mutex of clients[pos]
+						}
+						UnlockMutex(mutex);
+					}
+				}
+
+			}
+			else
+				cout << "Packet num mismatch!\n";
 		}
 	}
 }
@@ -295,6 +324,9 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 					if (clients[i].sBuf != nullptr)
 					{
 						string ss = *clients[i].sBuf;
+						
+						// Разбиваем ss на подстроки длины количества символов UDP пакета и каждый раз отправляем их как новые пакеты.
+
 						if (ss.size() > 0)
 						{
 							//clean sBuf;
@@ -305,6 +337,17 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 							//char buffer[1024];
 							//ZeroMemory(buffer, sizeof(buffer));
 							cout << "Send to client: " << clients[i].tId << " - " << ss << endl;
+
+							int num = ++clients[i].lastPacketNumSend;
+							stringstream ss1;
+							ss1 << num;
+							string s1 = ss1.str();
+							while (s1.size() < 10)
+							{
+								s1.insert(s1.begin(), '0');
+							}
+							s1 += ss;
+							ss = s1;
 							int count = sendto(s, ss.c_str(), ss.length(), 0, (sockaddr*)&clients[i].address, tolen);
 							if (count != ss.length())
 								cout << "Send data mismatch: send " << count << ", have " << ss.length() << endl;
