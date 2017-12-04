@@ -49,7 +49,6 @@
 
 #define DELIM ':'
 
-#define UDP_DG_LEN      512     // UNICODE symbol count in one packet.
 
 using namespace std;
 
@@ -83,6 +82,6 @@ private:
 	unsigned long lastPacketNumSend = 0;
 	unsigned long lastPacketNumRecv = 0;
         
-	string tempRBuf = NULL;
+	string tempRBuf;
 	unsigned long mesRLen = 0;
 };

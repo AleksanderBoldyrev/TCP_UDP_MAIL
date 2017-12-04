@@ -97,7 +97,7 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 				processInput(str);
 				processOutput(s, str);
 			}*/
-			Sleep(10);
+			Sleep(LISTEN_THREAD_SLEEP);
 		}
 		closesocket(s);
 		//if (listen((*pData.pAcceptSock), SOMAXCONN) == -1) {
@@ -178,7 +178,7 @@ unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clie
 	stringstream ss;
 	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_read";
 	clients[cSize - 1].rMutexName = converter.from_bytes(ss.str().c_str());
-	ss.clear();
+	ss.str(string());
 	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_write";
 	clients[cSize - 1].sMutexName = converter.from_bytes(ss.str().c_str());
 
@@ -209,15 +209,24 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 {
 	sockaddr_in from;
 	int fromlen = sizeof(from);
-	char buffer[4096];
+	char buffer[UDP_DG_LEN];
 	string buff2;
+	//stringstream bug;
 	ZeroMemory(buffer, sizeof(buffer));
 	//WSAEnumNetworkEvents();
-	if (recvfrom(s, buffer, sizeof(buffer), 0, (sockaddr*)&from, &fromlen) != SOCKET_ERROR)
+	while (recvfrom(s, buffer, sizeof(buffer), 0, (sockaddr*)&from, &fromlen) != SOCKET_ERROR)
 	{
 		HANDLE mutex;// = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
 		// write data into read buffer of clients[pos]
-		buff2 += buffer;
+		buff2.clear();
+		for (int i = 0; i<UDP_DG_LEN; i++)
+		{
+			if (buffer[i] != EOF_SYM)
+				buff2 += buffer[i];
+			else
+				break;
+		}
+		ZeroMemory(buffer, sizeof(buffer));
 		if (buff2.length() > 0)
 		{
 
@@ -234,26 +243,28 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 			unsigned int pos = checkClient(from, clients, cSize);
 			//
 			string str = buff2;
-			size_t num = TECH_DG_SIZE;
-			if (buff2.length() > num)
+			size_t num = 0;
+			if (buff2.length() > TECH_DG_SIZE)
 			{
-				string c = str.substr(0, num);
-				str = str.substr(num, str.length() - 1);
+				string c = str.substr(0, TECH_DG_SIZE);
+				str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
 				num = atoi(c.c_str());
 			}
 			if (clients[pos].lastPacketNumRecv + 1 == num)
 			{
+				clients[pos].lastPacketNumRecv = num;
 				// Пришел ли первый пакет и запоминаем длину
 				if (clients[pos].mesRLen == 0)
 				{
 					if (str.length() >= TECH_DG_SIZE)
 					{
 						string c = str.substr(0, TECH_DG_SIZE);
-						str = str.substr(TECH_DG_SIZE, str.length() - 1);
+						str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
 						clients[pos].mesRLen = atoi(c.c_str());
 						clients[pos].tempRBuf = str;
 					}
-					else cout << "First packet size is incorrect!\n";
+					else
+						cout << "First packet size is incorrect!\n";
 				}
 				else
 				{
@@ -262,7 +273,6 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 				// Все ли данные прочитали?
 				if (clients[pos].tempRBuf.length() == clients[pos].mesRLen)
 				{
-					clients[pos].lastPacketNumRecv = num;
 					//
 					// lock mutex for client
 					bool act = false;
@@ -315,7 +325,7 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 				count++;
 				if (!LockMutex(clients[i].sMutexName, m))
 				{
-					cout << "Failed to lock mutex!" << endl;
+					//cout << "Failed to lock mutex!" << endl;
 					UnlockMutex(m);
 				}
 				else
@@ -324,34 +334,37 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 					if (clients[i].sBuf != nullptr)
 					{
 						string ss = *clients[i].sBuf;
-						
+						unsigned int curPos = 0;
 						// Разбиваем ss на подстроки длины количества символов UDP пакета и каждый раз отправляем их как новые пакеты.
 
 						if (ss.size() > 0)
 						{
-							//clean sBuf;
 							clients[i].sBuf->clear();
-							// send data
-							//struct sockaddr_in to;
 							int tolen = sizeof(clients[i].address);
-							//char buffer[1024];
-							//ZeroMemory(buffer, sizeof(buffer));
-							cout << "Send to client: " << clients[i].tId << " - " << ss << endl;
-
-							int num = ++clients[i].lastPacketNumSend;
-							stringstream ss1;
-							ss1 << num;
-							string s1 = ss1.str();
-							while (s1.size() < 10)
+							stringstream sndBuf;
+							while (curPos < ss.length())
 							{
-								s1.insert(s1.begin(), '0');
+								sndBuf.str(string());
+								int num = ++clients[i].lastPacketNumSend;
+								int dataCount = 1;
+								sndBuf << intToStr(num);
+								if (curPos == 0)
+								{
+									sndBuf << intToStr(ss.length());
+									dataCount++;
+								}
+								int tLen = min(ss.length()-curPos, UDP_DG_LEN - dataCount*TECH_DG_SIZE);
+								//cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
+								sndBuf << ss.substr(curPos, tLen);
+								curPos += tLen;
+								if (sndBuf.str().length() < UDP_DG_LEN)
+									sndBuf << EOF_SYM;
+								cout << "Sending to client: " << sndBuf.str().c_str() << endl;
+								int count = sendto(s, sndBuf.str().c_str(), sndBuf.str().length(), 0, (sockaddr*)&clients[i].address, tolen);
+								if (count != sndBuf.str().length())
+									cout << "Send data mismatch: send " << count << ", have " << sndBuf.str().length() << endl;
+								act = true;
 							}
-							s1 += ss;
-							ss = s1;
-							int count = sendto(s, ss.c_str(), ss.length(), 0, (sockaddr*)&clients[i].address, tolen);
-							if (count != ss.length())
-								cout << "Send data mismatch: send " << count << ", have " << ss.length() << endl;
-							act = true;
 						}
 					}
 					else
@@ -369,10 +382,10 @@ bool CUdpServer::LockMutex(HANDLE& m)
 {
 	m = CreateMutex(NULL, FALSE, L"UdpServer");
 	DWORD result;
-	result = WaitForSingleObject(m, 100);
+	result = WaitForSingleObject(m, MUTEX_TIMEOUT);
 	if (result != WAIT_OBJECT_0)
 	{
-		cout << "Failed to lock mutex!" << endl;
+		//cout << "Failed to lock mutex!" << endl;
 		return false;
 	}
 	return true;
@@ -387,10 +400,10 @@ bool CUdpServer::LockMutex(const wstring& name, HANDLE& m)
 {
 	m = CreateMutex(NULL, FALSE, name.c_str());
 	DWORD result;
-	result = WaitForSingleObject(m, 100);
+	result = WaitForSingleObject(m, MUTEX_TIMEOUT);
 	if (result != WAIT_OBJECT_0)
 	{
-		cout << "Failed to lock mutex!" << endl;
+		//cout << "Failed to lock mutex!" << endl;
 		return false;
 	}
 	return true;

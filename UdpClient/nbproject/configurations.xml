@@ -68,6 +68,7 @@
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
+          <commandLine>-lpthread -lm</commandLine>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>
@@ -75,6 +76,9 @@
         <asmTool>
           <developmentMode>5</developmentMode>
         </asmTool>
+        <linkerTool>
+          <commandLine>-pthread</commandLine>
+        </linkerTool>
       </compileType>
       <item path="API.h" ex="false" tool="3" flavor2="0">
       </item>

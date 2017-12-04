@@ -9,6 +9,10 @@ using namespace std;
 
 #define DELIM_PARSE '|'
 #define DELIM_SERIALIZE '^'
+#define EOF_SYM (char)2
+
+#define UDP_DG_LEN      32     // UNICODE symbol count in one packet.
+#define TECH_DG_SIZE    10      // Char count, in which the length of the packet and it's number are secured.
 
 static const int API_SIZE = 18;
 
@@ -70,6 +74,18 @@ const int MESSAGE_STATES[] = { 0, 1, 2 };
 #define MSTATE_NORMAL 0     // position of normal value
 #define MSTATE_DELETED 1    // position of deleted value
 #define MSTATE_UNREAD 2     // position of unread value
+
+static string intToStr(const unsigned int& val)
+{
+	stringstream sss;
+	sss << val;
+	string sk = sss.str();
+	while (sk.size() < TECH_DG_SIZE)
+	{
+		sk.insert(sk.begin(), '0');
+	}
+	return sk;
+}
 
 class Message
 {

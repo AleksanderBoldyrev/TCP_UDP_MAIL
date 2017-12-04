@@ -1,7 +1,9 @@
 #include "ClientWorker.h"
 
 ClientWorker::ClientWorker()
-{}
+{
+
+}
 
 ClientWorker::~ClientWorker()
 {}
@@ -795,75 +797,140 @@ int ClientWorker::parseOpCode(const string& buf)
 	return NO_OPERATION;
 }
 
-void ClientWorker::sendTo(int socket, const string& message)
+void ClientWorker::sendTo(int socket, const string& message) 
 {
-	cout << "Send to server: " << message << endl;
-	int res = 0;
-	int size = message.size();
-	stringstream ss;
-	ss << size;
-	string s = ss.str();
-	while (s.size() < 10)
-	{
-		s.insert(s.begin(), '0');
-	}
-	s += message;
-        int num = ++lastPacketNumSend;
-		stringstream ss1;
-		ss1 << num;
-		string s1 = ss1.str();
-		while (s1.size() < 10)
-		{
-		s1.insert(s1.begin(), '0');
-                }
-		s1 += s;
-		s = s1;
-	res = sendto(socket, s.c_str(), s.size(), 0 , (struct sockaddr *) &servOut, sizeof(servOut));
-	printf("String to send: %s", s.c_str());
-	if (res != s.size())
-		printf("Send failed: %i != %i!\n", res, (int)s.length());
+    //cout << "Send to server: " << message << endl;
+    int res = 0;
+    int size = message.size();
+    /*stringstream ss;
+    ss << size;
+    string s = ss.str();
+    while (s.size() < 10)
+    {
+            s.insert(s.begin(), '0');
+    }
+    s += message;
+    int num = ++lastPacketNumSend;
+            stringstream ss1;
+            ss1 << num;
+            string s1 = ss1.str();
+            while (s1.size() < 10)
+            {
+                s1.insert(s1.begin(), '0');
+            }
+            s1 += s;
+            s = s1;
+    res = sendto(socket, s.c_str(), s.size(), 0 , (struct sockaddr *) &servOut, sizeof(servOut));
+    printf("String to send: %s", s.c_str());
+    if (res != s.size())
+            printf("Send failed: %i != %i!\n", res, (int)s.length());*/
+    if (message.size() > 0) 
+    {
+        int tolen = sizeof (servOut);
+        stringstream sndBuf;
+        unsigned int curPos = 0;
+        while (curPos < message.length()) 
+        {
+            sndBuf.str(string());
+            int num = ++lastPacketNumSend;
+            size_t dataCount = 1;
+            sndBuf << intToStr(num);
+            if (curPos == 0)
+            {
+                sndBuf << intToStr(message.length());
+                dataCount++;
+            }
+            int tLen = min(message.length()-curPos, UDP_DG_LEN - dataCount*TECH_DG_SIZE);
+            //cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
+            sndBuf << message.substr(curPos, tLen);
+               curPos += tLen;
+            if (sndBuf.str().length() < UDP_DG_LEN)
+		sndBuf << EOF_SYM;
+            cout << "Sending: " << sndBuf.str() << endl;
+            int count = sendto(socket, sndBuf.str().c_str(), sndBuf.str().length(), 0, (sockaddr*) & servOut, tolen);
+            if (count != sndBuf.str().length())
+                cout << "Send data mismatch: send " << count << ", have " << sndBuf.str().length() << endl;
+        }
+    }
 }
 
-bool ClientWorker::ListenRecv(int socket, std::string& MsgStr)
-{
-	char buffer[4096];
-        size_t len = 10;
-        size_t res = 0;
-        stringstream buf;
-        MsgStr.clear();
-		/*while (MsgStr.length() < len)
-		{*/
-			
-				res = recvfrom(socket, buffer, 4096, 0, (struct sockaddr *) &servIn, &servIn_size);
-                                buf << buffer;
-                                string s = buf.str();
-                                s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
-                                s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
+bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
+    char buffer[UDP_DG_LEN];
+    size_t len = TECH_DG_SIZE;
+    size_t res = 0;
+    string s;
+    MsgStr.clear();
+    memset(buffer, 0, sizeof(buffer));
+    while (res = recvfrom(socket, buffer, UDP_DG_LEN, 0, (struct sockaddr *) &servIn, &servIn_size) > 0) {
+        s.clear();
+        for (int i=0; i<UDP_DG_LEN; i++)
+        {
+            if (buffer[i]!=EOF_SYM)
+                s+=buffer[i];
+            else
+                break;
+        }
+        //s = string(buffer);
+        //for ()
+        memset(buffer, 0, sizeof(buffer));
+        s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
+        s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
+        cout << "Recieved: " << s << endl;
+        string str = s;
+        size_t num = 0;
+        if (s.length() > TECH_DG_SIZE) {
+            string c = str.substr(0, TECH_DG_SIZE);
+            str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
+            num = atoi(c.c_str());
+        }
+        if (lastPacketNumRecv + 1 == num) {
+             lastPacketNumRecv = num;
+            /*s = str;
+            lastPacketNumRecv = num;
                                 
-                                string str = s;
-                                size_t num = 10;
-                                if (s.length() > num)
-                                {
-                                        string c = str.substr(0, num);
-                                        str = str.substr(num, str.length() - 1);
-                                        num = atoi(c.c_str());
-                                }
-                                if (lastPacketNumRecv + 1 == num)
-                                {
-                                        s = str;
-                                        lastPacketNumRecv = num;
-                                
-                                        MsgStr+=s;
-                                        // parse len
-                                        if (MsgStr.length() >= len)
-                                        {
-                                                string c = MsgStr.substr(0, len);
-                                                MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
-                                                len = atoi(c.c_str());
-                                        }
-                                }
-                                else cout << "Packet order mismatch!\n";
-		//}
-	cout << "Recieved: " << MsgStr << endl;
-	return true;
+            MsgStr+=s;
+            // parse len
+            if (MsgStr.length() >= len)
+            {
+                    string c = MsgStr.substr(0, len);
+                    MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
+                    len = atoi(c.c_str());
+            }*/
+            // Пришел ли первый пакет и запоминаем длину
+            if (mesRLen == 0) {
+                if (str.length() >= TECH_DG_SIZE) {
+                    string c = str.substr(0, TECH_DG_SIZE);
+                    str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
+                    mesRLen = atoi(c.c_str());
+                    tempRBuf = str;
+                }
+                else cout << "First packet size is incorrect!\n";
+            }
+            else {
+                tempRBuf += str;
+            }
+            // Все ли данные прочитали?
+            if (tempRBuf.length() == mesRLen) {
+               
+                //
+                // lock mutex for client
+                //bool act = false;
+                //while (!act) 
+                //{
+                // read data
+                MsgStr.append(tempRBuf);
+                servOut = servIn;
+                //act = true;
+                tempRBuf = "";
+                mesRLen = 0;
+                break;
+                // unlock read mutex of clients[pos]
+                //}
+            }
+        }
+        else
+            cout << "Packet order mismatch!\n";
+    }
+    //cout << "Recieved: " << MsgStr << endl;
+    return true;
 }

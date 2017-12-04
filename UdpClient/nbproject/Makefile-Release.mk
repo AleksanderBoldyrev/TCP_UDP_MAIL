@@ -43,8 +43,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-lpthread -lm
+CXXFLAGS=-lpthread -lm
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -61,7 +61,7 @@ LDLIBSOPTIONS=
 
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/udpclient: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
-	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/udpclient ${OBJECTFILES} ${LDLIBSOPTIONS}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/udpclient ${OBJECTFILES} ${LDLIBSOPTIONS} -pthread
 
 ${OBJECTDIR}/ClientWorker.o: ClientWorker.cpp
 	${MKDIR} -p ${OBJECTDIR}

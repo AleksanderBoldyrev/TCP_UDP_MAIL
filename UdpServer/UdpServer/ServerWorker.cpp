@@ -1108,16 +1108,7 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 
 void ServerWorker::sendTo(const string& message) {
 	//int res = 0;
-	int size = message.size();
-	stringstream ss;
-	ss << size;
-	string s = ss.str();
-	//sprintf(s.c_str(), "%d", size);
-	while (s.size() < 10)
-	{
-		s.insert(s.begin(), '0');
-	}
-	s += message;
+	
 	//printf("String to send: %s\n", s.c_str());
 	///res = send(socket, s.c_str(), s.size(), 0);
 	//if (res != s.size())
@@ -1139,7 +1130,7 @@ void ServerWorker::sendTo(const string& message) {
 			if (LockMutex(td->sMutexName, m) && td->sBuf != nullptr)
 			{
 				//*td->sBuf = message;
-				*td->sBuf = s;
+				*td->sBuf = message;
 				act = true;
 			}
 			UnlockMutex(m);
@@ -1194,7 +1185,7 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
 						args[cc - 2] = buf.str();
 					}
 					cc++;
-					buf.str(std::string());
+					buf.str(string());
 				}
 				else
 				{
